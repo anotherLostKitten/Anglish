@@ -10,7 +10,7 @@ While waiting on more concrete spec. for the AIR, focus should be on input into 
 
 2. Figuring out what LLMs give us best results for Anglish, where we can host them (locally? where?). Also look for existing research interfacing with LLMs in similar ways.
 
-3. What are we outputting from LLMs? Existing languages we compile into AIR? See what gives us best ouput & easy to verify.
+3. What are we outputting from LLMs? Existing languages we compile into AIR? See what gives us best ouput & is easy to verify.
 
 4. Design list of Anglish Tools the LLMs will have access to.
 
@@ -25,3 +25,9 @@ While waiting on more concrete spec. for the AIR, focus should be on input into 
 - What access to LLMs do we have available through the lab? Subscriptions to online tools / machines for running locally etc..
 
 - Are paths just protecting writes? Seems like reads are called into directly. If it's just being called directly from vibe lines, how do we verify this?
+
+#### Tech stack :
+
+Rust,
+
+[LangChain](https://github.com/Abraxas-365/langchain-rust),
