@@ -51,6 +51,7 @@ TaskDecl         ::= "$" \nospace ~reservedTask identifier "(" \list<Param, \sep
 DataDecl         ::= "%" \nospace ~reservedSignal identifier linebreak VibeLineOpt
 
 AgentDecl        ::= "#" \nospace identifier ":" agentType "(" \list<Param, \sep=","> ")" VibeBlock
+// TODO -- i think this declares entry & exit fns?
 
 PathDecl         ::= "=" \nospace identifier ( ":" pathType )? "(" "@" \nospace identifer "," "@" \nospace identifier ")" endline VibeLineOpt
 
