@@ -242,9 +242,11 @@ impl<T: TokenStream> ParseContext<T> {
                 self.add_error(ParserErrorType::UnknownSpaceType);
                 ast::SpaceType::Unknown
             }
-        }else {
+        } else {
             ast::SpaceType::Unknown
         };
+
+        let params = vec![];
 
         _ = self.next_line();
 
@@ -254,11 +256,11 @@ impl<T: TokenStream> ParseContext<T> {
 
         let space = ast::SpaceDecl {
             ident: space_name,
-            space_type: space_type,
-            params: vec![],
-            vibe_desc: vibe_desc,
+            space_type,
+            params,
+            vibe_desc,
 
-            line_start: line_start,
+            line_start,
             line_end: self.cur_line,
         };
 

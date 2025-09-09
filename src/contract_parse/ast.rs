@@ -96,6 +96,7 @@ impl Param {
             col: col,
         };
 
+        // it would be nice to paritially init these because it is an extra memcpy ... oh well ! maybe it will get optimized away
         p.name = &p.mem_source.as_ref().unwrap()[..name.len()];
         p.binds = &p.mem_source.as_ref().unwrap()[name.len()..];
 
