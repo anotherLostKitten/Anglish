@@ -11,7 +11,7 @@ spaceType        ::= "UI" | "IO" | "DATA" | "FUNC" | "AGENTIC"
 agentType        ::= "DF" | "AF"
 pathType         ::= "WRITE" | "READ" // tbd...
 
-Program          ::= linebreak* ( OuterDecl )*
+Contract         ::= linebreak* ( OuterDecl )*
 OuterDecl        ::= SpaceDecl linebreak+
                  |   AgentDecl linebreak+
                  |   PathDecl  linebreak*
