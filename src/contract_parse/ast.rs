@@ -77,23 +77,23 @@ pub struct Param {
 }
 
 impl Param {
-    pub fn new(name: &str, binds: &str, line: usize, col: usize) -> Param {
+    pub fn new(name: *const str, binds: *const str, line: usize, col: usize) -> Param {
         Param {
-            name: name,
-            binds: binds,
+            name,
+            binds,
             mem_source: None,
-            line: line,
-            col: col,
+            line,
+            col,
         }
     }
 
     pub fn new_owned_mem(name: &str, binds: &str, line: usize, col: usize) -> Param {
         let mut p = Param {
-            name: name,
-            binds: binds,
+            name,
+            binds,
             mem_source: Some(format!("{}{}", name, binds)),
-            line: line,
-            col: col,
+            line,
+            col,
         };
 
         // it would be nice to paritially init these because it is an extra memcpy ... oh well ! maybe it will get optimized away
@@ -101,6 +101,11 @@ impl Param {
         p.binds = &p.mem_source.as_ref().unwrap()[name.len()..];
 
         return p;
+    }
+
+    pub fn print(&self) {
+        println!("{} = %{}", unsafe { &*self.name }, unsafe { &*self.binds });
+
     }
 }
 
@@ -129,17 +134,16 @@ enum MetaRefData {
 }
 
 impl VibeBlock {
-    // pub fn new(source: &str) -> VibeBlock {
-    //     let mut block = VibeBlock {
-    //         vibe_prose: String::from(source),
-    //         meta_refs: vec![],
-    //     };
-    //     block.meta_refs.push(MetaRef {
-    //         ident: block.vibe_prose.as_str(),
-    //         ref_info: MetaRefData::DataRef,
-    //     });
-    //     return block;
-    // }
+    pub fn new(vibe_prose: String, line_start: usize, line_end: usize) -> VibeBlock {
+        let mut block = VibeBlock {
+            vibe_prose,
+            meta_refs: vec![],
+            line_start,
+            line_end,
+        };
+
+        return block;
+    }
 
     pub fn get_prose(&self) -> &str {
         self.vibe_prose.as_str()

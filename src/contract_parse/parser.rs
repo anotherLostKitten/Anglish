@@ -12,6 +12,9 @@ pub enum ParserErrorType {
     NoSpacesInContract,
     SpaceDeclMissingName,
     UnknownSpaceType,
+    IllFormattedParameter,
+    SpaceBetweenMetacharAndIdentifier,
+    NotVibeOrContinuationLine,
 }
 
 pub struct ParserError {
@@ -163,6 +166,16 @@ impl<T: TokenStream> ParseContext<T> {
         return Some(self.ts.get_slice(start_pos, end_pos));
     }
 
+    fn consume_after_metachar_spaces(&mut self) {
+        match self.ts.look_ahead(0) {
+            Some(' ') | Some('\t') => {
+                self.add_error(ParserErrorType::SpaceBetweenMetacharAndIdentifier);
+                self.consume_spaces();
+            },
+            _ => {},
+        }
+    }
+
     fn parse_contract(&mut self) -> Option<ast::Contract> {
         let mut root = ast::Contract::new();
 
@@ -213,7 +226,7 @@ impl<T: TokenStream> ParseContext<T> {
             self.add_error(ParserErrorType::ExpectedSpaceDecl);
             return None;
         }
-
+        self.consume_after_metachar_spaces();
         let space_name = if let Some(x) = self.next_identifier() { String::from(x) } else {
             self.add_error(ParserErrorType::SpaceDeclMissingName);
             return None;
@@ -225,7 +238,7 @@ impl<T: TokenStream> ParseContext<T> {
             _ = self.next_char();
             self.consume_spaces();
             if let Some(s) = self.next_identifier() {
-                let res = match s {
+                let res = match s { // kludge -- we could copy into fixed size buffer and vectorize bitwise op to lowercase
                     "UI" | "ui" => ast::SpaceType::UI,
                     "IO" | "io" => ast::SpaceType::IO,
                     "DATA" | "Data" | "data" => ast::SpaceType::DATA,
@@ -246,13 +259,11 @@ impl<T: TokenStream> ParseContext<T> {
             ast::SpaceType::Unknown
         };
 
-        let params = vec![];
+        let params = self.parse_params();
 
         _ = self.next_line();
 
-        let vibe_desc = if let Some(x) = self.parse_vibe_block() {x} else {
-            return None;
-        };
+        let vibe_desc = self.parse_vibe_block();
 
         let space = ast::SpaceDecl {
             ident: space_name,
@@ -275,8 +286,92 @@ impl<T: TokenStream> ParseContext<T> {
         todo!();
     }
 
-    fn parse_vibe_block(&mut self) -> Option<ast::VibeBlock> {
-        todo!();
+    fn parse_vibe_block(&mut self) -> ast::VibeBlock {
+        let line_start = self.cur_line;
+
+        let mut vibe_prose = String::new();
+        let mut meta_str_ranges: Vec<(usize, usize)> = vec![];
+        let mut meta_str_range_counts: Vec<usize> = vec![]; // eg. a data ref needs 1; use import 2; task ref 2p + 1
+
+        loop {
+            if self.ts.look_ahead(0) == Some('>') {
+                _ = self.next_char();
+                if self.ts.look_ahead(0) == Some('>') && self.ts.look_ahead(1) == Some('>') {
+                    self.ts.seek_forward(2);
+                    self.cur_col += 2;
+
+                    self.consume_spaces();
+
+                    // TODO parse vibe prose & add to string loop; deal with metachars ...
+                } else {
+                    self.consume_spaces();
+                    match self.ts.look_ahead(0) {
+                        Some('\n') | None => {
+                            // continuation line
+                        },
+                        _ => {
+                            self.add_error(ParserErrorType::NotVibeOrContinuationLine);
+                        }
+                    }
+                    _ = self.next_line();
+                }
+            } else {
+                break;
+            }
+        }
+
+        return ast::VibeBlock::new(vibe_prose, line_start, self.cur_line);
+    }
+
+    fn parse_params(&mut self) -> Vec<ast::Param> {
+        let mut params: Vec<ast::Param> = vec![];
+
+        self.consume_spaces();
+
+        if self.ts.look_ahead(0) == Some('(') {
+            _ = self.next_char();
+            self.consume_spaces();
+            loop {
+                let line = self.cur_line;
+                let col = self.cur_col;
+
+                if self.ts.look_ahead(0) == Some(')') {
+                    _ = self.next_char();
+                    self.consume_spaces();
+                    break;
+                }
+                let name: *const str = if let Some(x) = self.next_identifier() { x } else {
+                    self.add_error(ParserErrorType::IllFormattedParameter);
+                    break;
+                };
+                self.consume_spaces();
+                if self.ts.look_ahead(0) == Some('=') {
+                    _ = self.next_char();
+                } else {
+                    self.add_error(ParserErrorType::IllFormattedParameter);
+                    break;
+                }
+                self.consume_spaces();
+
+                if self.ts.look_ahead(0) == Some('%') {
+                    _ = self.next_char();
+                } else {
+                    self.add_error(ParserErrorType::IllFormattedParameter);
+                    break;
+                }
+                self.consume_after_metachar_spaces();
+                let binds: *const str  = if let Some(x) = self.next_identifier() { x } else {
+                    self.add_error(ParserErrorType::IllFormattedParameter);
+                    break;
+                };
+
+                params.push(ast::Param::new_owned_mem(unsafe { &*name }, unsafe { &*binds }, line, col));
+                params[params.len()-1].print();
+                self.consume_spaces();
+            }
+        }
+
+        return params;
     }
 }
 
