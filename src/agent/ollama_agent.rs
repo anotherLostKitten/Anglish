@@ -1,12 +1,10 @@
-use std::env;
-
 use async_trait::async_trait;
 use ferrous_llm::{
     ollama::{ChatProvider, OllamaChatResponse, OllamaConfig, OllamaError, OllamaProvider},
-    ChatRequest, ChatRequestBuilder,
+    ChatRequest,
 };
 
-use crate::agent::traits::Agent;
+use crate::agent::Agent;
 
 pub fn init_provider() -> Result<OllamaProvider, OllamaError> {
     let config = OllamaConfig::from_env()?;
@@ -58,4 +56,15 @@ impl<'a> Agent for OllamaAgent<'a> {
             .build();
         (*self.provider).chat(request).await
     }
+}
+
+#[test]
+fn test_initializing_provider() {
+    unsafe {
+        std::env::set_var("OLLAMA_BASE_URL", "http://localhost:11434");
+        std::env::set_var("OLLAMA_MODEL", "llama3.2:1b");
+    }
+
+    let provider = init_provider();
+    assert!(provider.is_ok())
 }
