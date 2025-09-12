@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 dotenv = "0.15.0"
-ferrous-llm = {version = "0.6.1", features = ["ollama", "specta"]}
+langchain-rust = "4.6.0"
 log = "0.4.28"
 specta = "1.0.5"
 test-log = "0.2.18"

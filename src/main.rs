@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-mod agent;
+mod llm;
 
 fn main() {
     println!("Hello, world!");
