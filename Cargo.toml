@@ -6,8 +6,12 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 dotenv = "0.15.0"
-langchain-rust = "4.6.0"
 log = "0.4.28"
+rig-core = "0.19.0"
+serde_json = "1.0.143"
 specta = "1.0.5"
 test-log = "0.2.18"
 tokio = { version = "1.47.1", features = ["full"] }
+
+[dev-dependencies]
+tokio-test = "0.4.4"

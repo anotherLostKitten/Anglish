@@ -1,63 +1,55 @@
-use std::sync::Arc;
-
-use langchain_rust::{
-    agent::{AgentError, AgentExecutor, OpenAiToolAgent, OpenAiToolAgentBuilder},
-    chain::options::ChainCallOptions,
-    llm::{OpenAI, OpenAIConfig},
-    memory::SimpleMemory,
-    tools::Tool,
+use rig::{
+    agent::{Agent, AgentBuilder},
+    client::{CompletionClient, ProviderClient},
+    providers::openai::{Client, CompletionModel},
 };
 
-pub fn init_llm() -> OpenAI<OpenAIConfig> {
-    OpenAI::default()
-        .with_config(
-            OpenAIConfig::default()
-                .with_api_base(
-                    std::env::var("OPENAI_BASE_URL").expect("OPENAI_BASE_URL must be set!"),
-                )
-                .with_api_key(
-                    std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set!"),
-                ),
-        )
-        .with_model(std::env::var("OPENAI_MODEL").expect("OPENAI_MODEL must be set!"))
+pub fn init_llm() -> AgentBuilder<CompletionModel> {
+    Client::from_env()
+        .completion_model(&std::env::var("OPENAI_MODEL").expect("OPENAI_MODEL must be set!"))
+        .completions_api()
+        .into_agent_builder()
 }
 
 pub fn build_agent(
-    llm: &OpenAI<OpenAIConfig>,
-    optional_temperature: Option<f32>,
-    optional_max_tokens: Option<u32>,
-    optional_tools: Option<&[Arc<dyn Tool>]>,
-    optional_memory: Option<SimpleMemory>,
-) -> Result<AgentExecutor<OpenAiToolAgent>, AgentError> {
+    llm: AgentBuilder<CompletionModel>,
+    optional_temperature: Option<f64>,
+    optional_max_tokens: Option<u64>,
+    optional_system_prompt: Option<&str>,
+) -> Agent<CompletionModel> {
     let temperature = optional_temperature.unwrap_or(1.0);
-    let max_tokens = optional_max_tokens.unwrap_or(150);
-    let options = ChainCallOptions::new()
-        .with_temperature(temperature)
-        .with_max_tokens(max_tokens);
-    let agent_or_error = match optional_tools {
-        Some(tools) => OpenAiToolAgentBuilder::new()
-            .tools(tools)
-            .options(options)
-            .build(llm.clone()),
-        None => OpenAiToolAgentBuilder::new()
-            .options(options)
-            .build(llm.clone()),
-    };
-    match agent_or_error {
-        Ok(agent) => match optional_memory {
-            Some(memory) => Ok(AgentExecutor::from_agent(agent).with_memory(memory.into())),
-            None => Ok(AgentExecutor::from_agent(agent)),
-        },
-        Err(e) => Err(e),
+    let max_tokens = optional_max_tokens.unwrap_or(1024);
+    match optional_system_prompt {
+        Some(system_prompt) => llm.preamble(system_prompt),
+        None => llm,
     }
+    .temperature(temperature)
+    .max_tokens(max_tokens)
+    .build()
 }
 
-#[tokio::test]
-#[test_log::test]
-#[ignore = "needs vllm running"]
-async fn test_initializing_provider() {
-    unsafe {
-        std::env::set_var("OPENAI_BASE_URL", "http://localhost:8080");
-        std::env::set_var("OLLAMA_MODEL", "llama3.2:1b");
+#[cfg(test)]
+mod tests {
+
+    use rig::completion::Prompt;
+
+    use crate::llm::agent::{build_agent, init_llm};
+
+    #[tokio::test]
+    #[test_log::test]
+    #[ignore = "needs vllm running"]
+    async fn test_simple_prompt() {
+        unsafe {
+            std::env::set_var("OPENAI_BASE_URL", "http://localhost:8000/v1");
+            std::env::set_var("OPENAI_API_KEY", "EMPTY");
+            std::env::set_var("OPENAI_MODEL", "google/gemma-3-4b-it");
+        }
+
+        let llm = init_llm();
+        let agent = build_agent(llm, None, None, Some("You are a helpful assistant!"));
+        match agent.prompt("Hello!").await {
+            Ok(response) => println!("Result: {}", response),
+            Err(e) => panic!("{e}"),
+        }
     }
 }
