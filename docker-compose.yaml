@@ -1,14 +1,22 @@
 services:
-  ollama:
+  vllm:
     volumes:
-      - ./ollama/ollama:/root/.ollama
-    container_name: ollama
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      - ./tool_chat_template_gemma3_pythonic.jinja:/root/tool_chat_template_gemma3_pythonic.jinja
+    container_name: vllm
     pull_policy: always
     tty: true
     restart: unless-stopped
-    image: ollama/ollama:latest
+    image: vllm/vllm-openai:latest
     ports:
-      - "11434:11434"
+      - "8000:8000"
     environment:
-      - OLLAMA_KEEP_ALIVE=24h
+      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+    ipc: host
     runtime: nvidia
+    command: >
+      --model ${OPENAI_MODEL}
+      --max-model-len 4096
+      --gpu-memory-utilization 0.80
+      --chat-template /root/tool_chat_template_gemma3_pythonic.jinja
