@@ -1,0 +1,59 @@
+space            ::= r"[ \t]+"
+linebreak        ::= "\n" | \endoffile
+
+nonMetaProse     ::= r"[^@#$%=\n]+"
+
+identifier       ::= identifierStart identifierPart*
+identifierStart  ::= r"[a-zA-Z_]"
+identifierPart   ::= identifierStart | r"[0-9]"
+
+spaceType        ::= "UI" | "IO" | "DATA" | "FUNC" | "AGENTIC"
+agentType        ::= "DF" | "AF"
+pathType         ::= "WRITE" | "READ" // tbd...
+
+Contract         ::= linebreak* ( OuterDecl )*
+OuterDecl        ::= SpaceDecl linebreak+
+                 |   AgentDecl linebreak+
+                 |   PathDecl  linebreak*
+
+// TODO -- replicable ?
+SpaceDecl        ::= "@" \nospace (identifier \nospace "." \nospace)* identifier ( ":" spaceType )? "(" \list<Param, \sep=","> ")" linebreak SpaceInner
+SpaceInner       ::= VibeBlock SpaceInnerDecl*
+SpaceInnerDecl   ::= TaskDecl
+                 |   AgentDecl
+                 |   DataDecl
+
+Param            ::= identifier "=" "%" \nospace identifier
+
+VibeBlock        ::= ContinuationLine* VibeLine ( VibeLine | ContinuationLine )*
+VibeLine         ::= ">>>" VibeLineElement* linebreak
+ContinuationLine ::= ">" linebreak
+VibeBlockOpt     ::= ( VibeLine | ContinuationLine )*
+VibeLineOpt      ::= ContinuationLine* VibeLine? ContinuationLine*
+
+VibeLineElement  ::= nonMetaProse
+                 |   DataReference
+                 |   UseImport
+                 |   TaskReference
+                 |   PathReference
+
+// TODO -- %spawn()? %despawn()?
+DataReference    ::= "%" \nospace identifier
+
+UseImport        ::= "$" \nospace "use" "(" "@" \nospace identifier ")" -- SpaceUse
+                 |   "$" \nospace "use" "(" "#" \nospace identifier ")" -- AgentUse
+TaskReference    ::= "$" \nospace ~"use" identifier ( "(" \list<Param, \sep=","> ")" )?
+
+PathReference    ::= "=" \nospace identifier
+
+TaskDecl         ::= "$" \nospace ~reservedTask identifier "(" \list<Param, \sep=","> ")" linebreak VibeBlock
+
+DataDecl         ::= "%" \nospace ~reservedSignal identifier linebreak VibeLineOpt
+
+AgentDecl        ::= "#" \nospace identifier ":" agentType "(" \list<Param, \sep=","> ")" VibeBlock
+// TODO -- i think this declares entry & exit fns?
+
+PathDecl         ::= "=" \nospace identifier ( ":" pathType )? "(" "@" \nospace identifer "," "@" \nospace identifier ")" endline VibeLineOpt
+
+reservedTask     ::= "use"
+reservedSignal   ::= "spawn" | "despawn" | "onFocus" | "onSubmit" | "onEnter" | "onExit"
