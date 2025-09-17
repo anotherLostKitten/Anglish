@@ -3,7 +3,6 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       - ./tool_chat_template_gemma3_pythonic.jinja:/root/tool_chat_template_gemma3_pythonic.jinja
-    container_name: vllm
     pull_policy: always
     tty: true
     restart: unless-stopped
