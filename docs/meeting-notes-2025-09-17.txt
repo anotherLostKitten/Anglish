@@ -1,0 +1,12 @@
+-- no space level data:
+   have data at task level,
+   use DATA space for persistence / state
+
+-- make sure subspace doesn't use its parent
+-- think more on events / signals, especially spawn, despawn.
+-- main space which spawns all the top-level spaces
+-- better way to have path routing
+-- don't need user defined events -- get rid of events in air
+-- tasks have a role: what is it for?
+-- path routing : we have paths going into a space that gets $used in multiple places : how does that path get routed?
+-- path namings, maybe we still need to think about what the most important attributes about a path are for a user to specify... exposed functionality at target site? what kind of data going over the path?
