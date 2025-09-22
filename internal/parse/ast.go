@@ -9,6 +9,7 @@ type Contract struct {
 type SpaceDecl struct {
 	ident string
 	space_type SpaceType
+	replicable bool
 	params []Param
 	vibe_desc VibeBlock
 
@@ -75,8 +76,8 @@ type TaskDecl struct {
 // }
 
 type Param struct {
-	name, binds []byte
-	mem_source *string
+	in_param bool
+	data_name string
 
 	line, col uint64
 }
