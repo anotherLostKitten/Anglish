@@ -12,6 +12,9 @@ func main() {
 	r := strings.NewReader("@spacey:FUNC ( in=%argy )")
 	c, errors := parse.ParseFromReader(r)
 	fmt.Printf("error number : %d\n", len(errors))
+	for i := 0; i < len(errors); i++ {
+		parse.PrintErrorInfo(errors[i])
+	}
 	fmt.Printf("%+v\n", c)
 	fmt.Println("Hello World!")
 }
