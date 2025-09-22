@@ -2,29 +2,9 @@ package parse
 
 import (
 	// "fmt"
-	//	"io"
+	// "io"
 	"strings"
 )
-
-type ParserError uint64
-const (
-	UnexpectedMetachar ParserError = iota
-	NonAsciiChar
-	ExpectedOuterDecl
-	ExpectedSpaceDecl
-	ExpectedDataName
-	ExpectedIdentifier
-	ExpectedInOut
-	ExpectedEquals
-	DuplicateTag
-	UnknownTag
-	MismatchedParens
-)
-
-type ParserErrorInfo struct {
-	err ParserError
-	line, col uint64
-}
 
 type ParserInfo struct {
 	line, col uint64
@@ -35,22 +15,6 @@ type ParserInfo struct {
 type locationTaggedString struct {
 	val string
 	line, col uint64
-}
-
-func (pi *ParserInfo) addError(errno ParserError) {
-	pi.errors = append(pi.errors, ParserErrorInfo{
-		err: errno,
-		line: pi.line,
-		col: pi.col,
-	})
-}
-
-func (pi *ParserInfo) addErrorTagged(errno ParserError, location locationTaggedString) {
-	pi.errors = append(pi.errors, ParserErrorInfo{
-		err: errno,
-		line: location.line,
-		col: location.col,
-	})
 }
 
 func ParseFromReader(reader *strings.Reader) (Contract, []ParserErrorInfo) {
@@ -230,6 +194,7 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 			}
 
 			expected_in_out_error := false
+
 			switch strings.ToLower(in_out) {
 			case "in":
 				last_param_in = true
@@ -262,8 +227,6 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 					pi.addError(ExpectedInOut)
 				}
 			}
-
-			pi.addError(ExpectedInOut)
 
 			ch, size, _ = reader.ReadRune()
 			if ch != '%' {
@@ -376,6 +339,8 @@ func parseSpaceDecl(reader *strings.Reader, pi *ParserInfo) *SpaceDecl {
 
 	consumeLineRemainder(reader, pi)
 
+	// todo parse vibe blocks
+	// todo parse rest of scope
 
 	decl.line_end = pi.line
 	return &decl
