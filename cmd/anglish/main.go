@@ -10,6 +10,8 @@ import (
 
 func main() {
 	r := strings.NewReader("@spacey:FUNC ( in=%argy )")
-	parse.ParseFromReader(r)
+	c, errors := parse.ParseFromReader(r)
+	fmt.Printf("error number : %d\n", len(errors))
+	fmt.Printf("%+v\n", c)
 	fmt.Println("Hello World!")
 }
