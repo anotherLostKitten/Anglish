@@ -2,8 +2,8 @@ package parse
 
 type Contract struct {
 	spaces []SpaceDecl
-	agents []AgentDecl
-	paths []PathDecl
+	// agents []AgentDecl // todo
+	// paths []PathDecl // todo
 }
 
 type SpaceDecl struct {
@@ -11,16 +11,16 @@ type SpaceDecl struct {
 	space_type SpaceType
 	params []Param
 	vibe_desc VibeBlock
-	parent *SpaceDecl
 
 	// todo inner decls
+	// todo imports
 
 	line_start, line_end uint64
 }
 
 type SpaceType byte
 const (
-	Unknown SpaceType = iota
+	UnknownSpace SpaceType = iota
 	UI
 	IO
 	DATA
@@ -39,7 +39,7 @@ type AgentDecl struct {
 
 type AgentType byte
 const (
-	Unknown AgentType = iota
+	UnknownAgent AgentType = iota
 	AF
 	DF
 )
@@ -56,9 +56,9 @@ type PathDecl struct {
 
 type PathType byte
 const (
-	Unknown PathType = iota
-	READ
-	WRITE
+	UnknownPath PathType = iota
+	INVOKE
+	ATTEND
 )
 
 type TaskDecl struct {
@@ -69,11 +69,10 @@ type TaskDecl struct {
 	line_start, line_end uint64
 }
 
-type DataDecl struct {
-	ident string
-
-	line uint64
-}
+// type DataDecl struct {
+// 	ident string
+// 	line uint64
+// }
 
 type Param struct {
 	name, binds []byte
@@ -84,7 +83,7 @@ type Param struct {
 
 type VibeBlock struct {
 	vibe_prose string
-	meta_refs []*MetaRef
+	// meta_refs []*MetaRef // fixme
 
 	line_start, line_end uint64
 }
@@ -126,11 +125,11 @@ type MetaRefTask struct {
 
 	line, col uint64
 
-	args []Params
+	args []Param
 }
 
 type MetaRefPath struct {
 	ident []byte
 
-	line, col uint46
+	line, col uint64
 }
