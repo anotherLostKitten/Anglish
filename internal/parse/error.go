@@ -17,6 +17,8 @@ const (
 	DuplicateTag
 	UnknownTag
 	MismatchedParens
+	UseMissingImport
+	UseUnsupportedImport
 )
 
 type ParserErrorInfo struct {
@@ -54,6 +56,8 @@ func PrintErrorInfo(errinf ParserErrorInfo) {
 	case DuplicateTag: fmt.Printf("Duplicate or Contradictory Tag Definition")
 	case UnknownTag: fmt.Printf("Unknown Tag Name")
 	case MismatchedParens: fmt.Printf("Mismatched Parentheses")
+	case UseMissingImport: fmt.Printf("Missing import for $use expression: should take the form $use(element), where element is a @space or #agent.")
+	case UseUnsupportedImport: fmt.Printf("Cannot import this element. Expression should take the form $use(element), where element is a @space or #agent.")
 	default: fmt.Printf("???")
 	}
 	fmt.Printf("\n")
