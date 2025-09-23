@@ -339,9 +339,208 @@ func parseSpaceDecl(reader *strings.Reader, pi *ParserInfo) *SpaceDecl {
 
 	consumeLineRemainder(reader, pi)
 
-	// todo parse vibe blocks
+	decl.vibe_desc = parseVibeBlock(reader, pi)
+
 	// todo parse rest of scope
 
 	decl.line_end = pi.line
 	return &decl
+}
+
+func parseVibeBlock(reader *strings.Reader, pi *ParserInfo) VibeBlock {
+	var vb VibeBlock
+	vb.line_start = pi.line
+BlockLoop:
+	for reader.Len() > 0 {
+		consumeSpaces(reader, pi)
+		ch, size, _ := reader.ReadRune()
+		if ch != '>' {
+			reader.UnreadRune()
+			break BlockLoop
+		}
+		pi.col += uint64(size)
+
+		consumeSpaces(reader, pi)
+		ch, size, _ = reader.ReadRune()
+		if ch == '\n' { // continuation line
+			pi.line++
+			pi.col = 0
+			continue BlockLoop
+		} else {
+			reader.UnreadRune()
+		}
+
+		var vl strings.Builder
+	LineLoop:
+		for reader.Len() > 0 {
+			ch, size, _ := reader.ReadRune()
+			pi.col += uint64(size)
+			switch ch {
+			case ' ', '\t': // normalize any amount of whitespace into a single space
+				consumeSpaces(reader, pi)
+				ch2, _, _ := reader.ReadRune()
+				if ch2 != '\n' { // trims trailing whitespaces
+					vl.WriteRune(' ')
+				}
+				reader.UnreadRune()
+			case '\n':
+				pi.line++
+				pi.col = 0
+				break LineLoop
+			case '%':
+				ref := parseMetaRefData(reader, pi)
+				if ref != nil {
+					vl.WriteString(ref.ToStr())
+					vb.meta_refs = append(vb.meta_refs, ref)
+				} else {
+					vl.WriteRune(ch)
+				}
+			case '$':
+				ref := parseMetaRefTask(reader, pi)
+				if ref != nil {
+					vl.WriteString(ref.ToStr())
+					vb.meta_refs = append(vb.meta_refs, ref)
+				} else {
+					vl.WriteRune(ch)
+				}
+
+				// because we can consume spaces while parsing the task params in a non-hygenic way,
+				// we make sure there is a space afterwards before remainder of vibe line
+				consumeSpaces(reader, pi)
+				ch2, _, _ := reader.ReadRune()
+				if ch2 != '\n' { // trims trailing whitespaces
+					vl.WriteRune(' ')
+				}
+			case '=':
+				ref := parseMetaRefData(reader, pi)
+				if ref != nil {
+					vl.WriteString(ref.ToStr())
+					vb.meta_refs = append(vb.meta_refs, ref)
+				} else {
+					vl.WriteRune(ch)
+				}
+			default:
+				vl.WriteRune(ch)
+			}
+		}
+
+		vb.vibe_prose = append(vb.vibe_prose, vl.String())
+	}
+	vb.line_end = pi.line
+	return vb
+}
+
+func parseMetaRefData(reader *strings.Reader, pi *ParserInfo) *MetaRefData {
+	ch, size, _ := reader.ReadRune()
+	if ch == '%' {
+		pi.col += uint64(size)
+	} else {
+		reader.UnreadRune()
+	}
+
+	var mrd MetaRefData
+	mrd.line = pi.line
+	mrd.col = pi.col
+
+	mrd.ident = parseIdentifier(reader, pi)
+	if mrd.ident == "" {
+		return nil
+	}
+	return &mrd
+}
+
+func parseMetaRefTask(reader *strings.Reader, pi *ParserInfo) MetaRef {
+	ch, size, _ := reader.ReadRune()
+	if ch == '$' {
+		pi.col += uint64(size)
+	} else {
+		reader.UnreadRune()
+	}
+
+	// todo this gives us line & col in the source file -- do we want line / col in the vibe block ?
+	col := pi.col
+	line := pi.line
+
+	ident := parseIdentifier(reader, pi)
+	if ident == "" {
+		return nil
+	}
+	if ident == "use" {
+		consumeSpaces(reader, pi)
+
+		ch, size, _ := reader.ReadRune()
+		if ch == '(' {
+			pi.col += uint64(size)
+		} else {
+			reader.UnreadRune()
+			pi.addError(UseMissingImport)
+			// todo? do we want a way to ROLL BACK if we don't have a valid "use" defn. ?
+			return nil
+		}
+		consumeSpaces(reader, pi)
+		mru := MetaRefUseImport{
+			line: line,
+			col: col,
+		}
+		ch, size, _ = reader.ReadRune()
+		switch ch {
+		case '@':
+			mru.import_type = UseImportSpace
+		case '#':
+			mru.import_type = UseImportAgent
+		default:
+			reader.UnreadRune()
+			// todo maybe consume until end parenthesis ... ?
+			// or roll back... :/
+			pi.addError(UseUnsupportedImport)
+			return nil
+		}
+		pi.col += uint64(size)
+
+		mru.imported = parseIdentifier(reader, pi)
+
+		consumeSpaces(reader, pi)
+		ch, size, _ = reader.ReadRune()
+		if ch == ')' {
+			pi.col += uint64(size)
+		} else {
+			reader.UnreadRune()
+			pi.addError(MismatchedParens)
+		}
+
+		if mru.imported == "" {
+			pi.addError(UseUnsupportedImport)
+			return nil
+		}
+
+		return &mru
+	} else {
+		consumeSpaces(reader, pi)
+		mrt := MetaRefTask{
+			ident: ident,
+			line: line,
+			col: col,
+			args: parseParams(reader, pi),
+		}
+		return &mrt
+	}
+}
+
+func parseMetaRefPath(reader *strings.Reader, pi *ParserInfo) *MetaRefPath {
+	ch, size, _ := reader.ReadRune()
+	if ch == '=' {
+		pi.col += uint64(size)
+	} else {
+		reader.UnreadRune()
+	}
+
+	var mrp MetaRefPath
+	mrp.line = pi.line
+	mrp.col = pi.col
+
+	mrp.ident = parseIdentifier(reader, pi)
+	if mrp.ident == "" {
+		return nil
+	}
+	return &mrp
 }
