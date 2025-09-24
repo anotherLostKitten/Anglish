@@ -17,7 +17,10 @@ type SpaceDecl struct {
 	params []Param
 	vibe_desc VibeBlock
 
-	// todo inner decls
+	// inner decls
+	agents []AgentDecl
+	tasks []TaskDecl
+	// data []DatumDecl
 
 	line_start, line_end uint64
 }
@@ -73,7 +76,7 @@ type TaskDecl struct {
 	line_start, line_end uint64
 }
 
-// type DataDecl struct {
+// type DatumDecl struct {
 // 	ident string
 // 	line uint64
 // }
@@ -95,7 +98,7 @@ func (p *Param) ToStr() string {
 
 type VibeBlock struct {
 	vibe_prose []string
-	meta_refs []MetaRef // fixme
+	meta_refs []MetaRef
 
 	line_start, line_end uint64
 }

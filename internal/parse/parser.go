@@ -95,6 +95,18 @@ func consumeSpaces(reader *strings.Reader, pi *ParserInfo) {
 	}
 }
 
+func tryParseRune(reader *strings.Reader, pi *ParserInfo, ch_goal ...rune) bool {
+	ch, size, _ := reader.ReadRune()
+	for i := 0; i < len(ch_goal); i++ {
+		if ch == ch_goal[i] {
+			pi.col += uint64(size)
+			return true
+		}
+	}
+	reader.UnreadRune()
+	return false
+}
+
 func identStart(ch rune) bool {
 	return ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch == '_'
 }
@@ -133,12 +145,10 @@ func parseTags(reader *strings.Reader, pi *ParserInfo) []locationTaggedString {
 	for reader.Len() > 0 {
 		consumeSpaces(reader, pi)
 
-		ch, size, _ := reader.ReadRune()
-		if ch != ':' {
-			reader.UnreadRune()
+
+		if !tryParseRune(reader, pi, ':') {
 			return tags
 		}
-		pi.col += uint64(size)
 
 		consumeSpaces(reader, pi)
 
@@ -164,13 +174,11 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 
 	// todo -- if we always return when we don't have an opening param we don't need this
 	has_open_paren := false
-	ch, size, _ := reader.ReadRune()
-	if ch == '(' {
-		pi.col += uint64(size)
+
+	if tryParseRune(reader, pi, '(') {
 		has_open_paren = true
 		consumeSpaces(reader, pi)
 	} else {
-		reader.UnreadRune()
 		return params
 	}
 
@@ -207,10 +215,13 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 				p.in_param = last_param_in
 			}
 			consumeSpaces(reader, pi)
-			ch, size, _ := reader.ReadRune()
-			if ch != '=' {
-				reader.UnreadRune()
 
+			if tryParseRune(reader, pi, '=') {
+				consumeSpaces(reader, pi)
+				if expected_in_out_error {
+					pi.addError(ExpectedInOut)
+				}
+			} else {
 				if expected_in_out_error {
 					pi.addError(ExpectedDataName)
 					p.data_name = in_out
@@ -219,21 +230,10 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 				} else {
 					pi.addError(ExpectedEquals)
 				}
-			} else {
-				pi.col += uint64(size)
-				consumeSpaces(reader, pi)
-
-				if expected_in_out_error {
-					pi.addError(ExpectedInOut)
-				}
 			}
 
-			ch, size, _ = reader.ReadRune()
-			if ch != '%' {
-				reader.UnreadRune()
+			if !tryParseRune(reader, pi, '%') {
 				pi.addError(ExpectedDataName)
-			} else {
-				pi.col += uint64(size)
 			}
 		} else {
 			p.in_param = last_param_in
@@ -249,38 +249,23 @@ func parseParams(reader *strings.Reader, pi *ParserInfo) []Param {
 
 		params = append(params, p)
 
-		ch, size, _ = reader.ReadRune()
-		if ch == ',' || ch == ';' {
-			pi.col += uint64(size)
+		if tryParseRune(reader, pi, ',', ';') {
 			consumeSpaces(reader, pi)
-		} else {
-			reader.UnreadRune()
 		}
 	}
 
-	ch, size, _ = reader.ReadRune()
-	if ch == ')' {
-		if !has_open_paren {
-			pi.addError(MismatchedParens)
-		}
-		pi.col += uint64(size)
-	} else {
-		if has_open_paren {
-			pi.addError(MismatchedParens)
-		}
-		reader.UnreadRune()
+	if tryParseRune(reader, pi, ')') != has_open_paren {
+		pi.addError(MismatchedParens)
 	}
+
 	return params
 }
 
 func parseSpaceDecl(reader *strings.Reader, pi *ParserInfo) *SpaceDecl {
-	ch, size, _ := reader.ReadRune()
-	if ch != '@' {
-		reader.UnreadRune()
+	if !tryParseRune(reader, pi, '@') {
 		pi.addError(ExpectedSpaceDecl)
 		return nil
 	}
-	pi.col += uint64(size)
 
 	var decl SpaceDecl
 	decl.line_start = pi.line
@@ -341,10 +326,99 @@ func parseSpaceDecl(reader *strings.Reader, pi *ParserInfo) *SpaceDecl {
 
 	decl.vibe_desc = parseVibeBlock(reader, pi)
 
-	// todo parse rest of scope
+InnerDeclLoop:
+	for reader.Len() > 0 {
+		consumeSpaces(reader, pi)
+
+		ch, _, _ := reader.ReadRune()
+		reader.UnreadRune()
+		switch ch {
+		case '#':
+			ref := parseAgentDecl(reader, pi)
+			if ref != nil {
+				decl.agents = append(decl.agents, *ref)
+			}
+		case '$':
+			ref := parseTaskDecl(reader, pi)
+			if ref != nil {
+				decl.tasks = append(decl.tasks, *ref)
+			}
+		case '@':
+			pi.addError(IllegalDeclarationInsideSpaceScope)
+			break InnerDeclLoop
+		case '=':
+			pi.addError(IllegalDeclarationInsideSpaceScope)
+			break InnerDeclLoop
+		default:
+			pi.addError(ExpectedInnerDecl)
+			break InnerDeclLoop
+		}
+	}
 
 	decl.line_end = pi.line
 	return &decl
+}
+
+func parseAgentDecl(reader *strings.Reader, pi *ParserInfo) *AgentDecl {
+	if !tryParseRune(reader, pi, '#') {
+		pi.addError(ExpectedAgentDecl)
+		return nil
+	}
+
+	var agent AgentDecl
+	agent.line_start = pi.line
+
+	agent.ident = parseIdentifier(reader, pi)
+	if agent.ident == "" {
+		pi.addError(ExpectedIdentifier)
+		return nil
+	}
+
+	consumeSpaces(reader, pi)
+
+	tags := parseTags(reader, pi)
+
+	for i := 0; i < len(tags); i++ {
+		switch strings.ToUpper(tags[i].val) {
+		case "DF":
+			if agent.agent_type != UnknownAgent {
+				pi.addErrorTagged(DuplicateTag, tags[i])
+			}
+			agent.agent_type = DF
+		case "AF":
+			if agent.agent_type != UnknownAgent {
+				pi.addErrorTagged(DuplicateTag, tags[i])
+			}
+			agent.agent_type = AF
+		default:
+			pi.addErrorTagged(UnknownTag, tags[i])
+		}
+	}
+	if agent.agent_type == UnknownAgent {
+		pi.addError(MissingRequiredTag)
+	}
+
+	agent.params = parseParams(reader, pi)
+
+	consumeLineRemainder(reader, pi)
+
+	agent.vibe_desc = parseVibeBlock(reader, pi)
+
+	agent.line_end = pi.line
+	return &agent
+}
+
+func parseTaskDecl(reader *strings.Reader, pi *ParserInfo) *TaskDecl {
+	if !tryParseRune(reader, pi, '$') {
+		pi.addError(ExpectedTaskDecl)
+		return nil
+	}
+
+	var task TaskDecl
+
+	// todo
+
+	return &task
 }
 
 func parseVibeBlock(reader *strings.Reader, pi *ParserInfo) VibeBlock {
@@ -353,21 +427,17 @@ func parseVibeBlock(reader *strings.Reader, pi *ParserInfo) VibeBlock {
 BlockLoop:
 	for reader.Len() > 0 {
 		consumeSpaces(reader, pi)
-		ch, size, _ := reader.ReadRune()
-		if ch != '>' {
-			reader.UnreadRune()
+
+		if !tryParseRune(reader, pi, '>') {
 			break BlockLoop
 		}
-		pi.col += uint64(size)
 
 		consumeSpaces(reader, pi)
-		ch, size, _ = reader.ReadRune()
-		if ch == '\n' { // continuation line
+
+		if tryParseRune(reader, pi, '\n') {
 			pi.line++
 			pi.col = 0
 			continue BlockLoop
-		} else {
-			reader.UnreadRune()
 		}
 
 		var vl strings.Builder
@@ -408,6 +478,7 @@ BlockLoop:
 				// we make sure there is a space afterwards before remainder of vibe line
 				consumeSpaces(reader, pi)
 				ch2, _, _ := reader.ReadRune()
+				reader.UnreadRune()
 				if ch2 != '\n' { // trims trailing whitespaces
 					vl.WriteRune(' ')
 				}
@@ -431,12 +502,7 @@ BlockLoop:
 }
 
 func parseMetaRefData(reader *strings.Reader, pi *ParserInfo) *MetaRefData {
-	ch, size, _ := reader.ReadRune()
-	if ch == '%' {
-		pi.col += uint64(size)
-	} else {
-		reader.UnreadRune()
-	}
+	tryParseRune(reader, pi, '%')
 
 	var mrd MetaRefData
 	mrd.line = pi.line
@@ -450,12 +516,7 @@ func parseMetaRefData(reader *strings.Reader, pi *ParserInfo) *MetaRefData {
 }
 
 func parseMetaRefTask(reader *strings.Reader, pi *ParserInfo) MetaRef {
-	ch, size, _ := reader.ReadRune()
-	if ch == '$' {
-		pi.col += uint64(size)
-	} else {
-		reader.UnreadRune()
-	}
+	tryParseRune(reader, pi, '$')
 
 	// todo this gives us line & col in the source file -- do we want line / col in the vibe block ?
 	col := pi.col
@@ -468,21 +529,18 @@ func parseMetaRefTask(reader *strings.Reader, pi *ParserInfo) MetaRef {
 	if ident == "use" {
 		consumeSpaces(reader, pi)
 
-		ch, size, _ := reader.ReadRune()
-		if ch == '(' {
-			pi.col += uint64(size)
-		} else {
-			reader.UnreadRune()
+		if !tryParseRune(reader, pi, '(') {
 			pi.addError(UseMissingImport)
 			// todo? do we want a way to ROLL BACK if we don't have a valid "use" defn. ?
 			return nil
 		}
+
 		consumeSpaces(reader, pi)
 		mru := MetaRefUseImport{
 			line: line,
 			col: col,
 		}
-		ch, size, _ = reader.ReadRune()
+		ch, size, _ := reader.ReadRune()
 		switch ch {
 		case '@':
 			mru.import_type = UseImportSpace
@@ -500,11 +558,8 @@ func parseMetaRefTask(reader *strings.Reader, pi *ParserInfo) MetaRef {
 		mru.imported = parseIdentifier(reader, pi)
 
 		consumeSpaces(reader, pi)
-		ch, size, _ = reader.ReadRune()
-		if ch == ')' {
-			pi.col += uint64(size)
-		} else {
-			reader.UnreadRune()
+
+		if !tryParseRune(reader, pi, ')') {
 			pi.addError(MismatchedParens)
 		}
 
@@ -527,12 +582,7 @@ func parseMetaRefTask(reader *strings.Reader, pi *ParserInfo) MetaRef {
 }
 
 func parseMetaRefPath(reader *strings.Reader, pi *ParserInfo) *MetaRefPath {
-	ch, size, _ := reader.ReadRune()
-	if ch == '=' {
-		pi.col += uint64(size)
-	} else {
-		reader.UnreadRune()
-	}
+	tryParseRune(reader, pi, '=')
 
 	var mrp MetaRefPath
 	mrp.line = pi.line
