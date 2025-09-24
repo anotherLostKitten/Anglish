@@ -38,6 +38,18 @@ func ParseFromReader(reader *strings.Reader) (Contract, []ParserErrorInfo) {
 			if spacey != nil {
 				c.spaces = append(c.spaces, *spacey)
 			}
+		case '#':
+			reader.UnreadRune()
+			ref := parseAgentDecl(reader, &pi)
+			if ref != nil {
+				c.agents = append(c.agents, *ref)
+			}
+		case '=':
+			reader.UnreadRune()
+			ref := parsePathDecl(reader, &pi)
+			if ref != nil {
+				c.paths = append(c.paths, *ref)
+			}
 		default:
 			pi.addError(ExpectedOuterDecl)
 			pi.col++
@@ -415,10 +427,119 @@ func parseTaskDecl(reader *strings.Reader, pi *ParserInfo) *TaskDecl {
 	}
 
 	var task TaskDecl
+	task.line_start = pi.line
 
-	// todo
+	task.ident = parseIdentifier(reader, pi)
+	if task.ident == "" {
+		pi.addError(ExpectedIdentifier)
+		return nil
+	}
 
+	task.params = parseParams(reader, pi)
+
+	consumeLineRemainder(reader, pi)
+
+	task.vibe_desc = parseVibeBlock(reader, pi)
+
+	task.line_end = pi.line
 	return &task
+}
+
+func parseSpaceParams(reader *strings.Reader, pi *ParserInfo) []locationTaggedString {
+	consumeSpaces(reader, pi)
+
+	var spaces []locationTaggedString
+
+	if !tryParseRune(reader, pi, '(') {
+		return spaces
+	}
+
+	for reader.Len() > 0 {
+		consumeSpaces(reader, pi)
+
+		if !tryParseRune(reader, pi, '@') {
+			pi.addError(ExpectedSpaceName)
+			break
+		}
+
+		next_space := locationTaggedString{
+			line: pi.line,
+			col: pi.col,
+		}
+		next_space.val = parseIdentifier(reader, pi)
+
+		if next_space.val == "" {
+			pi.addError(ExpectedSpaceName)
+		} else {
+			spaces = append(spaces, next_space)
+			consumeSpaces(reader, pi)
+		}
+
+		if tryParseRune(reader, pi, ',', ';') {
+			consumeSpaces(reader, pi)
+		}
+	}
+
+	if !tryParseRune(reader, pi, ')') {
+		pi.addError(MismatchedParens)
+	}
+
+	return spaces
+}
+
+func parsePathDecl(reader *strings.Reader, pi *ParserInfo) *PathDecl {
+	if !tryParseRune(reader, pi, '=') {
+		pi.addError(ExpectedPathDecl)
+		return nil
+	}
+
+	var path PathDecl
+	path.line_start = pi.line
+
+	path.ident = parseIdentifier(reader, pi)
+	if path.ident == "" {
+		pi.addError(ExpectedIdentifier)
+		return nil
+	}
+
+	tags := parseTags(reader, pi)
+
+	for i := 0; i < len(tags); i++ {
+		switch strings.ToUpper(tags[i].val) {
+		case "INVOKE":
+			if path.path_type != UnknownPath {
+				pi.addErrorTagged(DuplicateTag, tags[i])
+			}
+			path.path_type = INVOKE
+		case "ATTEND":
+			if path.path_type != UnknownPath {
+				pi.addErrorTagged(DuplicateTag, tags[i])
+			}
+			path.path_type = ATTEND
+		default:
+			pi.addErrorTagged(UnknownTag, tags[i])
+		}
+	}
+	if path.path_type == UnknownPath {
+		pi.addError(MissingRequiredTag)
+	}
+
+	path_spaces := parseSpaceParams(reader, pi)
+
+	if len(path_spaces) != 2 {
+		pi.addError(IncorrectNumberPathSpaces)
+		return nil
+	}
+
+	path.space_source = path_spaces[0].val
+	path.space_dest = path_spaces[1].val
+
+	consumeLineRemainder(reader, pi)
+
+	path.vibe_desc = parseVibeBlock(reader, pi)
+
+	path.line_end = pi.line
+	return &path
 }
 
 func parseVibeBlock(reader *strings.Reader, pi *ParserInfo) VibeBlock {
