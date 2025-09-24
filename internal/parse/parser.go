@@ -435,6 +435,8 @@ func parseTaskDecl(reader *strings.Reader, pi *ParserInfo) *TaskDecl {
 		return nil
 	}
 
+	// todo check if identifier is reserved -- viz., $use
+
 	task.params = parseParams(reader, pi)
 
 	consumeLineRemainder(reader, pi)
