@@ -15,6 +15,7 @@ const (
 	ExpectedTaskDecl
 	ExpectedPathDecl
 	ExpectedDataName
+	ExpectedSpaceName
 	ExpectedIdentifier
 	ExpectedInOut
 	ExpectedEquals
@@ -25,6 +26,7 @@ const (
 	UseMissingImport
 	UseUnsupportedImport
 	IllegalDeclarationInsideSpaceScope
+	IncorrectNumberPathSpaces
 )
 
 type ParserErrorInfo struct {

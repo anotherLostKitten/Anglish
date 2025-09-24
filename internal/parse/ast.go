@@ -6,8 +6,8 @@ import (
 
 type Contract struct {
 	spaces []SpaceDecl
-	// agents []AgentDecl // todo
-	// paths []PathDecl // todo
+	agents []AgentDecl
+	paths []PathDecl
 }
 
 type SpaceDecl struct {
@@ -54,11 +54,11 @@ const (
 type PathDecl struct {
 	ident string
 	path_type PathType
-	space_source *SpaceDecl
-	space_dest *SpaceDecl
+	space_source string
+	space_dest string
 	vibe_desc VibeBlock
 
-	line uint64
+	line_start, line_end uint64
 }
 
 type PathType byte
