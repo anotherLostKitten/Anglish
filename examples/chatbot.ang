@@ -1,0 +1,26 @@
+@assistant:AGENTIC
+> You are a helpful assistant. Users will ask you general questions and you will answer the best you can.
+>>> You will have access to tools, so part of giving the best answer could involve selecting a relevant tool for the job.
+>
+$agentic_main
+> If the prompt is irrelevant to any of tools, you may fully create the response.
+> If the prompt has a mathematical expression, call the $evaluator to solve it.
+>
+$evaluator(in=%expression, out=%answer)
+> Evaluate the inputted mathematical expression.
+
+@chat:UI
+> A web-based chat to interface with an LLM. 
+> The user will be presented with a text box to write prompts to %promptInput.
+> The agent will stream responses back to %promptResponse.
+> The local chat history should be displayed with each message differentiated visually by role.
+>
+$prompt_writer(in=%promptIntput)
+> Writes user prompt to agent.
+>
+$promt_reader(out=%promptResponse)
+> Reads prompt from agent.
+
+=toAssistant:INVOKE(@chat, @assistant)
+> Connection to send prompt and receive responses.
+
