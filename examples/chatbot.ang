@@ -15,11 +15,8 @@ $evaluator(in=%expression, out=%answer)
 > The agent will stream responses back to %promptResponse.
 > The local chat history should be displayed with each message differentiated visually by role.
 >
-$prompt_writer(in=%promptIntput)
-> Writes user prompt to agent.
->
-$promt_reader(out=%promptResponse)
-> Reads prompt from agent.
+$prompt(in=%promptInput, out=%promptResponse)
+> Writes user prompt to agent and receives its response.
 
 =toAssistant:INVOKE(@chat, @assistant)
 > Connection to send prompt and receive responses.
