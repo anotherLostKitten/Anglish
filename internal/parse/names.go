@@ -36,6 +36,27 @@ type ParseOrder struct {
 	scope Scope
 	nodes_underlying []ParseNode
 	nodes_sorted []uint64
+	nodes_sorted_index int
+}
+
+func (po *ParseOrder) topSortVisit(id uint64) bool {
+	n := &po.nodes_underlying[id]
+	if n.visited {
+		return true
+	}
+	if n.temp { // cycle !
+		fmt.Printf("Node %s is in a cycle\n", n.ast_node.GetName().toString())
+		return false
+	}
+	n.temp = true
+	for dep_id := range n.deps {
+		po.topSortVisit(dep_id)
+	}
+	// fmt.Printf("adding node %s\n", n.ast_node.GetName().toString())
+	n.visited = true
+	po.nodes_sorted[po.nodes_sorted_index] = id
+	po.nodes_sorted_index += 1
+	return true
 }
 
 func (po *ParseOrder) addNames(unit ParseUnit) bool {
@@ -81,22 +102,44 @@ func GetParseOrder(c *Contract) ParseOrder {
 		// todo idk
 	}
 
-	po.nodes_sorted = make([]uint64, len(po.nodes_underlying))
-
 	for _, n := range po.nodes_underlying {
 		n.ast_node.GetDeps(&n.deps, &po.scope)
 	}
 
-	po.printDeps()
+	// po.printDeps()
 
 	// topological sort
-	// todo
+	po.nodes_sorted_index = 0
+	po.nodes_sorted = make([]uint64, len(po.nodes_underlying))
+
+	for i, n := range po.nodes_underlying {
+		if !n.visited {
+			if !po.topSortVisit(uint64(i)) {
+				po.nodes_sorted = po.nodes_sorted[:po.nodes_sorted_index]
+				return po
+			}
+		}
+	}
+
+	po.printDepsOrdered()
 
 	return po
 }
 
 func (po *ParseOrder) printDeps() {
 	for i, n := range po.nodes_underlying {
+		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
+		for dep, _ := range n.deps {
+			fmt.Printf("%d ", dep)
+		}
+		fmt.Println("")
+	}
+}
+
+func (po *ParseOrder) printDepsOrdered() {
+	fmt.Printf("\n%+v\n", po.nodes_sorted)
+	for _, i := range po.nodes_sorted {
+		n := po.nodes_underlying[i]
 		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
 		for dep, _ := range n.deps {
 			fmt.Printf("%d ", dep)
