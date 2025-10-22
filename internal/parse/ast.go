@@ -4,6 +4,18 @@ import (
 	"strings"
 )
 
+type MetaType byte
+const (
+	SPACE MetaType = iota
+	AGENT
+	TASK
+	PATH
+)
+type Ident struct {
+	t MetaType
+	n string
+}
+
 type Contract struct {
 	spaces []SpaceDecl
 	agents []AgentDecl
@@ -25,6 +37,41 @@ type SpaceDecl struct {
 	line_start, line_end uint64
 }
 
+func (me *SpaceDecl) GetName() Ident {
+	return Ident{
+		t: SPACE,
+		n: me.ident,
+	}
+}
+
+func (me *SpaceDecl) GetChildren() []ParseUnit {
+	a_len := len(me.agents)
+	children := make([]ParseUnit, a_len + len(me.tasks))
+	for i, a := range me.agents {
+		children[i] = a
+	}
+	for i, t := range me.tasks {
+		children[i + a_len] = t
+	}
+	// DatumDecls?
+	return children
+}
+
+func (me *SpaceDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	valid_idents := me.vibe_desc.getDeps(deps, scope)
+	if !valid_idents {
+		return false
+	}
+
+	for _, c := range me.GetChildren() {
+		id := c.GetName()
+		if !scope.tryAddDep(id, deps) {
+			return false
+		}
+	}
+	return true
+}
+
 type SpaceType byte
 const (
 	UnknownSpace SpaceType = iota
@@ -44,6 +91,23 @@ type AgentDecl struct {
 	line_start, line_end uint64
 }
 
+
+func (me *AgentDecl) GetName() Ident {
+	return Ident{
+		t: AGENT,
+		n: me.ident,
+	}
+}
+
+func (me *AgentDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *AgentDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return me.vibe_desc.getDeps(deps, scope)
+}
+
+
 type AgentType byte
 const (
 	UnknownAgent AgentType = iota
@@ -54,11 +118,32 @@ const (
 type PathDecl struct {
 	ident string
 	path_type PathType
-	space_source string
-	space_dest string
+	space_source Ident
+	space_dest Ident
 	vibe_desc VibeBlock
 
 	line_start, line_end uint64
+}
+
+func (me *PathDecl) GetName() Ident {
+	return Ident{
+		t: PATH,
+		n: me.ident,
+	}
+}
+
+func (me *PathDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *PathDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	if !scope.tryAddDep(me.space_source, deps) {
+		return false
+	}
+	if !scope.tryAddDep(me.space_dest, deps) {
+		return false
+	}
+	return me.vibe_desc.getDeps(deps, scope)
 }
 
 type PathType byte
@@ -74,6 +159,22 @@ type TaskDecl struct {
 	vibe_desc VibeBlock
 
 	line_start, line_end uint64
+}
+
+
+func (me *TaskDecl) GetName() Ident {
+	return Ident{
+		t: TASK,
+		n: me.ident,
+	}
+}
+
+func (me *TaskDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *TaskDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return me.vibe_desc.getDeps(deps, scope)
 }
 
 // type DatumDecl struct {
