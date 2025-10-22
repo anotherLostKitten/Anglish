@@ -19,9 +19,9 @@ func (scope *Scope) tryAddDep(id Ident, deps *map[uint64]bool) bool {
 }
 
 type ParseNode struct {
-	deps map[uint64]bool
+	deps    map[uint64]bool
 	visited bool
-	temp bool
+	temp    bool
 
 	ast_node ParseUnit
 }
@@ -33,9 +33,9 @@ type ParseUnit interface {
 }
 
 type ParseOrder struct {
-	scope Scope
-	nodes_underlying []ParseNode
-	nodes_sorted []uint64
+	scope              Scope
+	nodes_underlying   []ParseNode
+	nodes_sorted       []uint64
 	nodes_sorted_index int
 }
 
@@ -55,7 +55,6 @@ func (po *ParseOrder) tryAddChildDep(child_id Ident, parent_id Ident) bool {
 	po.nodes_underlying[child_i].deps[parent_i] = true
 	return true
 }
-
 
 func (po *ParseOrder) topSortVisit(id uint64) bool {
 	n := &po.nodes_underlying[id]
@@ -87,7 +86,7 @@ func (po *ParseOrder) addNames(unit ParseUnit) bool {
 
 	my_id := len(po.nodes_underlying)
 	po.nodes_underlying = append(po.nodes_underlying, ParseNode{
-		deps: make(map[uint64]bool),
+		deps:     make(map[uint64]bool),
 		ast_node: unit,
 	})
 	po.scope.names[ident] = uint64(my_id)
