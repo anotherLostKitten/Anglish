@@ -7,7 +7,7 @@ identifier       ::= identifierStart identifierPart*
 identifierStart  ::= r"[a-zA-Z_]"
 identifierPart   ::= identifierStart | r"[0-9]"
 
-spaceType        ::= "UI" | "IO" | "DATA" | "FUNC" | "AGENTIC"
+spaceType        ::= "UI" | "IO" | "DATA" | "CALL" | "CHAT"
 agentType        ::= "DF" | "AF"
 pathType         ::= "INVOKE" | "ATTEND"
 
