@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"strings"
 	"fmt"
 )
 
@@ -10,11 +9,12 @@ type Scope struct {
 }
 
 func (scope *Scope) tryAddDep(id Ident, deps *map[uint64]bool) bool {
-	i, ok := scope.get(id)
+	i, ok := scope.names[id]
 	if !ok {
+		fmt.Printf("Undeclared Identifier: %s\n", id.toString())
 		return false
 	}
-	deps[i] = true
+	(*deps)[i] = true
 	return true
 }
 
@@ -23,13 +23,13 @@ type ParseNode struct {
 	visited bool
 	temp bool
 
-	ast_node *ParseUnit
+	ast_node ParseUnit
 }
 
 type ParseUnit interface {
 	GetName() Ident
 	GetChildren() []ParseUnit
-	GetDeps(deps *map[uint64]bool, scope *Scope) bool
+	ParseDepGetter
 }
 
 type ParseOrder struct {
@@ -38,51 +38,69 @@ type ParseOrder struct {
 	nodes_sorted []uint64
 }
 
-func (po *ParseOrder) addNames(unit *ParseUnit) bool {
+func (po *ParseOrder) addNames(unit ParseUnit) bool {
 	ident := unit.GetName()
-	_, ok := po.scope.names[Ident]
+	_, dupes := po.scope.names[ident]
+
+	if dupes {
+		fmt.Printf("Duplicate Identifier: %s\n", ident.toString())
+	}
 
 	my_id := len(po.nodes_underlying)
 	po.nodes_underlying = append(po.nodes_underlying, ParseNode{
-		deps: make(map[uint64]bool)
-		ast_node: unit
+		deps: make(map[uint64]bool),
+		ast_node: unit,
 	})
-	po.scope.names[Ident] = my_id
+	po.scope.names[ident] = uint64(my_id)
 
-	for _, c := unit.GetChildren() {
-		ok &= po.addNames(c)
+	for _, c := range unit.GetChildren() {
+		dupes = po.addNames(c) || dupes
 	}
-	return ok
+	return dupes
 }
 
 func GetParseOrder(c *Contract) ParseOrder {
 	po := ParseOrder{
 		scope: Scope{
-			names: make(map[Ident]uint64)
-		}
+			names: make(map[Ident]uint64),
+		},
 	}
-	ok := true
-	for _, s := c.spaces {
-		ok &= po.addNames(s)
+	dupes := false
+	for _, s := range c.spaces {
+		dupes = po.addNames(&s) || dupes
 	}
-	for _, a := c.agents {
-		ok &= po.addNames(a)
+	for _, a := range c.agents {
+		dupes = po.addNames(&a) || dupes
 	}
-	for _, p := c.paths {
-		ok &= po.addNames(p)
+	for _, p := range c.paths {
+		dupes = po.addNames(&p) || dupes
 	}
 
-	if !ok {
-		fmt.Print("there were duplicate identifiers")
+	if dupes {
+		fmt.Println("there were duplicate identifiers")
 		// todo idk
 	}
 
 	po.nodes_sorted = make([]uint64, len(po.nodes_underlying))
 
-	for _, n := po.nodes_underlying {
-		n.ast_node.GetDeps(&n.deps, po.scope)
+	for _, n := range po.nodes_underlying {
+		n.ast_node.GetDeps(&n.deps, &po.scope)
 	}
+
+	po.printDeps()
 
 	// topological sort
 	// todo
+
+	return po
+}
+
+func (po *ParseOrder) printDeps() {
+	for i, n := range po.nodes_underlying {
+		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
+		for dep, _ := range n.deps {
+			fmt.Printf("%d ", dep)
+		}
+		fmt.Println("")
+	}
 }

@@ -534,12 +534,12 @@ func parsePathDecl(reader *strings.Reader, pi *ParserInfo) *PathDecl {
 	}
 
 	path.space_source = Ident{
-		t: SPACE
-		n: path_spaces[0].val
+		t: SPACE,
+		n: path_spaces[0].val,
 	}
 	path.space_dest = Ident{
-		t: SPACE
-		n: path_spaces[1].val
+		t: SPACE,
+		n: path_spaces[1].val,
 	}
 
 	consumeLineRemainder(reader, pi)
