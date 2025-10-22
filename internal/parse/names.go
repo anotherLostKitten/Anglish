@@ -126,15 +126,15 @@ func GetParseOrder(c *Contract) ParseOrder {
 	return po
 }
 
-func (po *ParseOrder) printDeps() {
-	for i, n := range po.nodes_underlying {
-		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
-		for dep, _ := range n.deps {
-			fmt.Printf("%d ", dep)
-		}
-		fmt.Println("")
-	}
-}
+// func (po *ParseOrder) printDeps() {
+// 	for i, n := range po.nodes_underlying {
+// 		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
+// 		for dep, _ := range n.deps {
+// 			fmt.Printf("%d ", dep)
+// 		}
+// 		fmt.Println("")
+// 	}
+// }
 
 func (po *ParseOrder) printDepsOrdered() {
 	fmt.Printf("\n%+v\n", po.nodes_sorted)
