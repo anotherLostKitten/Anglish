@@ -31,8 +31,8 @@ const (
 	UI
 	IO
 	DATA
-	FUNC
-	AGENTIC
+	CALL
+	CHAT
 )
 
 type AgentDecl struct {
