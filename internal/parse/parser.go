@@ -315,17 +315,17 @@ func parseSpaceDecl(reader *strings.Reader, pi *ParserInfo) *SpaceDecl {
 			} else {
 				decl.space_type = DATA
 			}
-		case "FUNC":
+		case "CALL":
 			if decl.space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = FUNC
+				decl.space_type = CALL
 			}
-		case "AGENTIC":
+		case "CHAT":
 			if decl.space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = AGENTIC
+				decl.space_type = CHAT
 			}
 		default:
 			pi.addErrorTagged(UnknownTag, tags[i])
