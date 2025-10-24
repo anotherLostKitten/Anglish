@@ -4,6 +4,30 @@ import (
 	"strings"
 )
 
+type MetaType byte
+const (
+	SPACE MetaType = iota
+	AGENT
+	TASK
+	PATH
+)
+type Ident struct {
+	t MetaType
+	n string
+}
+
+func (id Ident) toString() string {
+	var str string
+	switch id.t {
+	case SPACE: str = "@" + id.n
+	case AGENT: str = "#" + id.n
+	case TASK: str = "$" + id.n
+	case PATH: str = "=" + id.n
+	default: panic(-1)
+	}
+	return str
+}
+
 type Contract struct {
 	spaces []SpaceDecl
 	agents []AgentDecl
@@ -25,6 +49,41 @@ type SpaceDecl struct {
 	line_start, line_end uint64
 }
 
+func (me *SpaceDecl) GetName() Ident {
+	return Ident{
+		t: SPACE,
+		n: me.ident,
+	}
+}
+
+func (me *SpaceDecl) GetChildren() []ParseUnit {
+	a_len := len(me.agents)
+	children := make([]ParseUnit, a_len + len(me.tasks))
+	for i, a := range me.agents {
+		children[i] = &a
+	}
+	for i, t := range me.tasks {
+		children[i + a_len] = &t
+	}
+	// DatumDecls?
+	return children
+}
+
+func (me *SpaceDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	valid_idents := me.vibe_desc.getDeps(deps, scope)
+	if !valid_idents {
+		return false
+	}
+
+	for _, c := range me.GetChildren() {
+		id := c.GetName()
+		if !scope.tryAddDep(id, deps) {
+			return false
+		}
+	}
+	return true
+}
+
 type SpaceType byte
 const (
 	UnknownSpace SpaceType = iota
@@ -44,6 +103,23 @@ type AgentDecl struct {
 	line_start, line_end uint64
 }
 
+
+func (me *AgentDecl) GetName() Ident {
+	return Ident{
+		t: AGENT,
+		n: me.ident,
+	}
+}
+
+func (me *AgentDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *AgentDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return me.vibe_desc.getDeps(deps, scope)
+}
+
+
 type AgentType byte
 const (
 	UnknownAgent AgentType = iota
@@ -54,11 +130,32 @@ const (
 type PathDecl struct {
 	ident string
 	path_type PathType
-	space_source string
-	space_dest string
+	space_source Ident
+	space_dest Ident
 	vibe_desc VibeBlock
 
 	line_start, line_end uint64
+}
+
+func (me *PathDecl) GetName() Ident {
+	return Ident{
+		t: PATH,
+		n: me.ident,
+	}
+}
+
+func (me *PathDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *PathDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	if !scope.tryAddDep(me.space_source, deps) {
+		return false
+	}
+	if !scope.tryAddDep(me.space_dest, deps) {
+		return false
+	}
+	return me.vibe_desc.getDeps(deps, scope)
 }
 
 type PathType byte
@@ -74,6 +171,22 @@ type TaskDecl struct {
 	vibe_desc VibeBlock
 
 	line_start, line_end uint64
+}
+
+
+func (me *TaskDecl) GetName() Ident {
+	return Ident{
+		t: TASK,
+		n: me.ident,
+	}
+}
+
+func (me *TaskDecl) GetChildren() []ParseUnit {
+	return []ParseUnit{}
+}
+
+func (me *TaskDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return me.vibe_desc.getDeps(deps, scope)
 }
 
 // type DatumDecl struct {
@@ -103,21 +216,37 @@ type VibeBlock struct {
 	line_start, line_end uint64
 }
 
+func (vb *VibeBlock) getDeps(deps *map[uint64]bool, scope *Scope) bool {
+	ok := true
+	for _, mr := range vb.meta_refs {
+		ok = mr.GetDeps(deps, scope) && ok
+	}
+	return ok
+}
+
+type ParseDepGetter interface {
+	GetDeps(deps *map[uint64]bool, scope *Scope) bool
+}
+
 // can do meta_ref.(type) to get type
 type MetaRef interface {
 	// Line() int
 	// Col() int
 	ToStr() string
+	ParseDepGetter
 }
 
 type MetaRefData struct {
 	ident string
-
 	line, col uint64
 }
 
 func (mr *MetaRefData) ToStr() string {
 	return "%" + mr.ident
+}
+
+func (mr *MetaRefData) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return true
 }
 
 type UseImportType byte
@@ -128,10 +257,21 @@ const (
 
 type MetaRefUseImport struct {
 	imported string
-
 	import_type UseImportType
-
 	line, col uint64
+}
+
+func (mr *MetaRefUseImport) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	var ident_type MetaType
+	switch mr.import_type {
+	case UseImportSpace: ident_type = SPACE
+	case UseImportAgent: ident_type = AGENT
+	default: panic(-1)
+	}
+	return scope.tryAddDep(Ident{
+		t: ident_type,
+		n: mr.imported,
+	}, deps)
 }
 
 func (mr *MetaRefUseImport) ToStr() string {
@@ -146,9 +286,7 @@ func (mr *MetaRefUseImport) ToStr() string {
 
 type MetaRefTask struct {
 	ident string
-
 	line, col uint64
-
 	args []Param
 }
 
@@ -160,12 +298,25 @@ func (mr *MetaRefTask) ToStr() string {
 	return "$" + mr.ident + "(" + strings.Join(arg_strs, ", ") + ")"
 }
 
+func (mr *MetaRefTask) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return scope.tryAddDep(Ident{
+		t: TASK,
+		n: mr.ident,
+	}, deps)
+}
+
 type MetaRefPath struct {
 	ident string
-
 	line, col uint64
 }
 
 func (mr *MetaRefPath) ToStr() string {
 	return "=" + mr.ident
+}
+
+func (mr *MetaRefPath) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+	return scope.tryAddDep(Ident{
+		t: PATH,
+		n: mr.ident,
+	}, deps)
 }
