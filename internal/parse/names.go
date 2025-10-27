@@ -39,6 +39,24 @@ type ParseOrder struct {
 	nodes_sorted_index int
 }
 
+// ie., child depends on its parent being compiled first to be compiled
+func (po *ParseOrder) tryAddChildDep(child_id Ident, parent_id Ident) bool {
+	parent_i, ok := po.scope.names[parent_id]
+	if !ok {
+		fmt.Printf("Undeclared Identifier: %s\n", parent_id.toString())
+		return false
+	}
+	child_i, ok := po.scope.names[child_id]
+	if !ok {
+		fmt.Printf("Undeclared Identifier: %s\n", child_id.toString())
+		return false
+	}
+
+	po.nodes_underlying[child_i].deps[parent_i] = true
+	return true
+}
+
+
 func (po *ParseOrder) topSortVisit(id uint64) bool {
 	n := &po.nodes_underlying[id]
 	if n.visited {
@@ -103,7 +121,7 @@ func GetParseOrder(c *Contract) ParseOrder {
 	}
 
 	for _, n := range po.nodes_underlying {
-		n.ast_node.GetDeps(&n.deps, &po.scope)
+		n.ast_node.GetDeps(&n.deps, &po)
 	}
 
 	// po.printDeps()
