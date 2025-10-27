@@ -106,7 +106,6 @@ type AgentDecl struct {
 	line_start, line_end uint64
 }
 
-
 func (me *AgentDecl) GetName() Ident {
 	return Ident{
 		t: AGENT,
@@ -121,7 +120,6 @@ func (me *AgentDecl) GetChildren() []ParseUnit {
 func (me *AgentDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	return me.vibe_desc.getDeps(deps, po)
 }
-
 
 type AgentType byte
 const (
@@ -175,7 +173,6 @@ type TaskDecl struct {
 
 	line_start, line_end uint64
 }
-
 
 func (me *TaskDecl) GetName() Ident {
 	return Ident{
