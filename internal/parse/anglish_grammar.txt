@@ -9,7 +9,7 @@ identifierPart   ::= identifierStart | r"[0-9]"
 
 spaceType        ::= "UI" | "IO" | "DATA" | "FUNC" | "AGENTIC"
 agentType        ::= "DF" | "AF"
-pathType         ::= "WRITE" | "READ" // tbd...
+pathType         ::= "INVOKE" | "ATTEND"
 
 Contract         ::= linebreak* ( OuterDecl )*
 OuterDecl        ::= SpaceDecl linebreak+
@@ -17,16 +17,15 @@ OuterDecl        ::= SpaceDecl linebreak+
                  |   PathDecl  linebreak*
 
 // TODO -- replicable ?
-SpaceDecl        ::= "@" \nospace (identifier \nospace "." \nospace)* identifier ( ":" spaceType )? "(" \list<Param, \sep=","> ")" linebreak SpaceInner
+SpaceDecl        ::= "@" \nospace identifier ( ":" spaceType )? "(" \list<Param, \sep=","> ")" linebreak SpaceInner
 SpaceInner       ::= VibeBlock SpaceInnerDecl*
 SpaceInnerDecl   ::= TaskDecl
                  |   AgentDecl
-                 |   DataDecl
 
 Param            ::= identifier "=" "%" \nospace identifier
 
 VibeBlock        ::= ContinuationLine* VibeLine ( VibeLine | ContinuationLine )*
-VibeLine         ::= ">>>" VibeLineElement* linebreak
+VibeLine         ::= ">" VibeLineElement+ linebreak
 ContinuationLine ::= ">" linebreak
 VibeBlockOpt     ::= ( VibeLine | ContinuationLine )*
 VibeLineOpt      ::= ContinuationLine* VibeLine? ContinuationLine*
@@ -37,7 +36,6 @@ VibeLineElement  ::= nonMetaProse
                  |   TaskReference
                  |   PathReference
 
-// TODO -- %spawn()? %despawn()?
 DataReference    ::= "%" \nospace identifier
 
 UseImport        ::= "$" \nospace "use" "(" "@" \nospace identifier ")" -- SpaceUse
@@ -48,12 +46,11 @@ PathReference    ::= "=" \nospace identifier
 
 TaskDecl         ::= "$" \nospace ~reservedTask identifier "(" \list<Param, \sep=","> ")" linebreak VibeBlock
 
-DataDecl         ::= "%" \nospace ~reservedSignal identifier linebreak VibeLineOpt
+DataDecl         ::= "%" \nospace identifier linebreak VibeLineOpt
 
 AgentDecl        ::= "#" \nospace identifier ":" agentType "(" \list<Param, \sep=","> ")" VibeBlock
 // TODO -- i think this declares entry & exit fns?
 
-PathDecl         ::= "=" \nospace identifier ( ":" pathType )? "(" "@" \nospace identifer "," "@" \nospace identifier ")" endline VibeLineOpt
+PathDecl         ::= "=" \nospace identifier ":" pathType "(" "@" \nospace identifer "," "@" \nospace identifier ")" endline VibeLineOpt
 
 reservedTask     ::= "use"
-reservedSignal   ::= "spawn" | "despawn" | "onFocus" | "onSubmit" | "onEnter" | "onExit"
