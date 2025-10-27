@@ -69,17 +69,20 @@ func (me *SpaceDecl) GetChildren() []ParseUnit {
 	return children
 }
 
-func (me *SpaceDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	valid_idents := me.vibe_desc.getDeps(deps, scope)
+func (me *SpaceDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	valid_idents := me.vibe_desc.getDeps(deps, po)
 	if !valid_idents {
 		return false
 	}
-
+	space_id := me.GetName()
 	for _, c := range me.GetChildren() {
 		id := c.GetName()
-		if !scope.tryAddDep(id, deps) {
+		if !po.tryAddChildDep(id, space_id) {
 			return false
 		}
+		// if !po.scope.tryAddDep(id, deps) {
+		// 	return false
+		// }
 	}
 	return true
 }
@@ -103,7 +106,6 @@ type AgentDecl struct {
 	line_start, line_end uint64
 }
 
-
 func (me *AgentDecl) GetName() Ident {
 	return Ident{
 		t: AGENT,
@@ -115,10 +117,9 @@ func (me *AgentDecl) GetChildren() []ParseUnit {
 	return []ParseUnit{}
 }
 
-func (me *AgentDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	return me.vibe_desc.getDeps(deps, scope)
+func (me *AgentDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	return me.vibe_desc.getDeps(deps, po)
 }
-
 
 type AgentType byte
 const (
@@ -148,14 +149,14 @@ func (me *PathDecl) GetChildren() []ParseUnit {
 	return []ParseUnit{}
 }
 
-func (me *PathDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	if !scope.tryAddDep(me.space_source, deps) {
+func (me *PathDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	if !po.scope.tryAddDep(me.space_source, deps) {
 		return false
 	}
-	if !scope.tryAddDep(me.space_dest, deps) {
+	if !po.scope.tryAddDep(me.space_dest, deps) {
 		return false
 	}
-	return me.vibe_desc.getDeps(deps, scope)
+	return me.vibe_desc.getDeps(deps, po)
 }
 
 type PathType byte
@@ -173,7 +174,6 @@ type TaskDecl struct {
 	line_start, line_end uint64
 }
 
-
 func (me *TaskDecl) GetName() Ident {
 	return Ident{
 		t: TASK,
@@ -185,8 +185,8 @@ func (me *TaskDecl) GetChildren() []ParseUnit {
 	return []ParseUnit{}
 }
 
-func (me *TaskDecl) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	return me.vibe_desc.getDeps(deps, scope)
+func (me *TaskDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	return me.vibe_desc.getDeps(deps, po)
 }
 
 // type DatumDecl struct {
@@ -216,16 +216,16 @@ type VibeBlock struct {
 	line_start, line_end uint64
 }
 
-func (vb *VibeBlock) getDeps(deps *map[uint64]bool, scope *Scope) bool {
+func (vb *VibeBlock) getDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	ok := true
 	for _, mr := range vb.meta_refs {
-		ok = mr.GetDeps(deps, scope) && ok
+		ok = mr.GetDeps(deps, po) && ok
 	}
 	return ok
 }
 
 type ParseDepGetter interface {
-	GetDeps(deps *map[uint64]bool, scope *Scope) bool
+	GetDeps(deps *map[uint64]bool, po *ParseOrder) bool
 }
 
 // can do meta_ref.(type) to get type
@@ -245,7 +245,7 @@ func (mr *MetaRefData) ToStr() string {
 	return "%" + mr.ident
 }
 
-func (mr *MetaRefData) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+func (mr *MetaRefData) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	return true
 }
 
@@ -261,14 +261,14 @@ type MetaRefUseImport struct {
 	line, col uint64
 }
 
-func (mr *MetaRefUseImport) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
+func (mr *MetaRefUseImport) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	var ident_type MetaType
 	switch mr.import_type {
 	case UseImportSpace: ident_type = SPACE
 	case UseImportAgent: ident_type = AGENT
 	default: panic(-1)
 	}
-	return scope.tryAddDep(Ident{
+	return po.scope.tryAddDep(Ident{
 		t: ident_type,
 		n: mr.imported,
 	}, deps)
@@ -298,11 +298,12 @@ func (mr *MetaRefTask) ToStr() string {
 	return "$" + mr.ident + "(" + strings.Join(arg_strs, ", ") + ")"
 }
 
-func (mr *MetaRefTask) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	return scope.tryAddDep(Ident{
-		t: TASK,
-		n: mr.ident,
-	}, deps)
+func (mr *MetaRefTask) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	// return po.scope.tryAddDep(Ident{
+	// 	t: TASK,
+	// 	n: mr.ident,
+	// }, deps)
+	return true
 }
 
 type MetaRefPath struct {
@@ -314,8 +315,8 @@ func (mr *MetaRefPath) ToStr() string {
 	return "=" + mr.ident
 }
 
-func (mr *MetaRefPath) GetDeps(deps *map[uint64]bool, scope *Scope) bool {
-	return scope.tryAddDep(Ident{
+func (mr *MetaRefPath) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
+	return po.scope.tryAddDep(Ident{
 		t: PATH,
 		n: mr.ident,
 	}, deps)

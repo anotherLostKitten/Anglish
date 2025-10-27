@@ -27,6 +27,7 @@ const (
 	UseUnsupportedImport
 	IllegalDeclarationInsideSpaceScope
 	IncorrectNumberPathSpaces
+	FileNotFound
 )
 
 type ParserErrorInfo struct {
@@ -51,7 +52,7 @@ func (pi *ParserInfo) addErrorTagged(errno ParserError, location locationTaggedS
 }
 
 func PrintErrorInfo(errinf ParserErrorInfo) {
-	fmt.Printf("Error at (%d, %d): ", errinf.line, errinf.col)
+	fmt.Printf("Error at (%d, %d): ", errinf.line + 1, errinf.col + 1)
 	switch errinf.err {
 	case UnexpectedMetachar: fmt.Printf("Unexpected meta-character")
 	case NonAsciiChar: fmt.Printf("Unexpected non-ASCII character")
@@ -62,6 +63,7 @@ func PrintErrorInfo(errinf ParserErrorInfo) {
 	case ExpectedTaskDecl: fmt.Printf("Expected Task Declaration: $task")
 	case ExpectedPathDecl: fmt.Printf("Expected Path Declaration: =path")
 	case ExpectedDataName: fmt.Printf("Expected Data Name: %%data")
+	case ExpectedSpaceName: fmt.Printf("Expected Space Name: @space")
 	case ExpectedIdentifier: fmt.Printf("Expected Identifier: ident")
 	case ExpectedInOut: fmt.Printf("Expected in or out")
 	case ExpectedEquals: fmt.Printf("Expected =")
@@ -72,7 +74,7 @@ func PrintErrorInfo(errinf ParserErrorInfo) {
 	case UseMissingImport: fmt.Printf("Missing import for $use expression: should take the form $use(element), where element is a @space or #agent.")
 	case UseUnsupportedImport: fmt.Printf("Cannot import this element. Expression should take the form $use(element), where element is a @space or #agent.")
 	case IllegalDeclarationInsideSpaceScope: fmt.Printf("Illegal declaration inside @space scope. Should be: #agent, $task")
-	default: fmt.Printf("???")
+	default: fmt.Printf("Unknown Error: %d", errinf.err)
 	}
 	fmt.Printf("\n")
 
