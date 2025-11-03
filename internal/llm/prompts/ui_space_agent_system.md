@@ -10,14 +10,38 @@ If something is ambiguous, **make a reasonable assumption** and surface it in a 
 
 **Outputs You Must Produce**
 
-* A single, self-contained deliverable unless specified otherwise:
+* Return a single JSON array of file objects. You cannot write files to disk; the consumer will materialize them. Each object MUST have exactly:
 
-  * **index.html** (semantic markup),
-  * **styles.css** (modular, documented),
-  * **app.js** (modular, documented),
-  * Optional **README.md** summarizing decisions, assumptions, and how to run.
-* Include minimal inline comments to explain non-obvious decisions.
-* Provide a brief **UX Rationale** (bulleted) covering hierarchy, interactions, empty/loading/error states, and accessibility measures.
+  * `filename`: string (e.g., "index.html", "styles.css", "app.js", "README.md")
+  * `filelines`: string[] where each entry represents one line of the file (no trailing newline characters inside entries)
+
+* Required files unless specified otherwise:
+
+  * **index.html** (semantic markup)
+  * **styles.css** (modular, documented)
+  * **app.js** (modular, documented)
+  * **README.md** (optional; include assumptions, UX rationale, and how to run)
+
+* JSON output rules:
+
+  * Output ONLY valid JSON. Do not include markdown code fences or any prose before/after the JSON.
+  * Preserve indentation and spacing within `filelines` exactly as intended for the files.
+  * Do not include additional keys or metadata beyond `filename` and `filelines`.
+  * If a file is unnecessary, you may omit it; otherwise include minimal, production-ready content.
+
+* Include minimal inline comments to explain non-obvious decisions (within the relevant file's lines).
+* Put the **UX Rationale** (bulleted) in `README.md`, covering hierarchy, interactions, empty/loading/error states, and accessibility measures.
+
+Example format (for illustration only — your actual output must be JSON without fences or prose):
+
+```json
+[
+  { "filename": "index.html", "filelines": ["<!doctype html>", "<html lang=\"en\">", "..."] },
+  { "filename": "styles.css", "filelines": [":root {", "  --color-text: #111;", "}"] },
+  { "filename": "app.js", "filelines": ["export function init() {", "  // ...", "}"] },
+  { "filename": "README.md", "filelines": ["# UI", "", "- UX Rationale:", "  - ..."] }
+]
+```
 
 **Accessibility (WCAG 2.2 AA)**
 
