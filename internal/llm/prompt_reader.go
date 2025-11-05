@@ -9,7 +9,9 @@ import (
 
 const (
 	FuncSpaceAgentSystem = "func_space_agent_system"
-	UiSpaceAgentSystem   = "ui_space_agent_system"
+	UISpaceAgentSystem   = "ui_space_agent_system"
+	DFAgentAgentSystem   = "df_agent_agent_system"
+	AFAgentAgentSystem   = "af_agent_agent_system"
 )
 
 // ReadPrompt reads a specific prompt file from the prompts directory
