@@ -2,10 +2,10 @@ package parse
 
 import (
 	// "fmt"
-	"io"
-	"strings"
-	"os"
 	"bufio"
+	"io"
+	"os"
+	"strings"
 )
 
 type ParserInfo struct {
@@ -15,7 +15,7 @@ type ParserInfo struct {
 }
 
 type locationTaggedString struct {
-	val string
+	val       string
 	line, col uint64
 }
 
@@ -40,7 +40,7 @@ func ParseFromString(in string) (Contract, []ParserErrorInfo) {
 func ParseFromReader(reader io.RuneScanner) (Contract, []ParserErrorInfo) {
 	pi := ParserInfo{
 		line: 0,
-		col: 0,
+		col:  0,
 	}
 
 	var c Contract
@@ -185,7 +185,6 @@ func parseTags(reader io.RuneScanner, pi *ParserInfo) []locationTaggedString {
 	for {
 		consumeSpaces(reader, pi)
 
-
 		if !tryParseRune(reader, pi, ':') {
 			return tags
 		}
@@ -199,9 +198,9 @@ func parseTags(reader io.RuneScanner, pi *ParserInfo) []locationTaggedString {
 			return tags
 		}
 		tags = append(tags, locationTaggedString{
-			val: strings.ToUpper(ident),
+			val:  strings.ToUpper(ident),
 			line: pi.line,
-			col: old_col,
+			col:  old_col,
 		})
 	}
 	return tags
@@ -329,34 +328,34 @@ func parseSpaceDecl(reader io.RuneScanner, pi *ParserInfo) *SpaceDecl {
 			}
 			decl.replicable = true
 		case "UI":
-			if decl.space_type != UnknownSpace {
+			if decl.Space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = UI
+				decl.Space_type = UI
 			}
 		case "IO":
-			if decl.space_type != UnknownSpace {
+			if decl.Space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = IO
+				decl.Space_type = IO
 			}
 		case "DATA":
-			if decl.space_type != UnknownSpace {
+			if decl.Space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = DATA
+				decl.Space_type = DATA
 			}
 		case "CALL":
-			if decl.space_type != UnknownSpace {
+			if decl.Space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = CALL
+				decl.Space_type = CALL
 			}
 		case "CHAT":
-			if decl.space_type != UnknownSpace {
+			if decl.Space_type != UnknownSpace {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			} else {
-				decl.space_type = CHAT
+				decl.Space_type = CHAT
 			}
 		default:
 			pi.addErrorTagged(UnknownTag, tags[i])
@@ -434,20 +433,20 @@ func parseAgentDecl(reader io.RuneScanner, pi *ParserInfo) *AgentDecl {
 	for i := 0; i < len(tags); i++ {
 		switch strings.ToUpper(tags[i].val) {
 		case "DF":
-			if agent.agent_type != UnknownAgent {
+			if agent.Agent_type != UnknownAgent {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			}
-			agent.agent_type = DF
+			agent.Agent_type = DF
 		case "AF":
-			if agent.agent_type != UnknownAgent {
+			if agent.Agent_type != UnknownAgent {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			}
-			agent.agent_type = AF
+			agent.Agent_type = AF
 		default:
 			pi.addErrorTagged(UnknownTag, tags[i])
 		}
 	}
-	if agent.agent_type == UnknownAgent {
+	if agent.Agent_type == UnknownAgent {
 		pi.addError(MissingRequiredTag)
 	}
 
@@ -511,7 +510,7 @@ func parseSpaceParams(reader io.RuneScanner, pi *ParserInfo) []locationTaggedStr
 
 		next_space := locationTaggedString{
 			line: pi.line,
-			col: pi.col,
+			col:  pi.col,
 		}
 		next_space.val = parseIdentifier(reader, pi)
 
@@ -554,20 +553,20 @@ func parsePathDecl(reader io.RuneScanner, pi *ParserInfo) *PathDecl {
 	for i := 0; i < len(tags); i++ {
 		switch strings.ToUpper(tags[i].val) {
 		case "INVOKE":
-			if path.path_type != UnknownPath {
+			if path.Path_type != UnknownPath {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			}
-			path.path_type = INVOKE
+			path.Path_type = INVOKE
 		case "ATTEND":
-			if path.path_type != UnknownPath {
+			if path.Path_type != UnknownPath {
 				pi.addErrorTagged(DuplicateTag, tags[i])
 			}
-			path.path_type = ATTEND
+			path.Path_type = ATTEND
 		default:
 			pi.addErrorTagged(UnknownTag, tags[i])
 		}
 	}
-	if path.path_type == UnknownPath {
+	if path.Path_type == UnknownPath {
 		pi.addError(MissingRequiredTag)
 	}
 
@@ -715,7 +714,7 @@ func parseMetaRefTask(reader io.RuneScanner, pi *ParserInfo) MetaRef {
 		consumeSpaces(reader, pi)
 		mru := MetaRefUseImport{
 			line: line,
-			col: col,
+			col:  col,
 		}
 		ch, size, _ := reader.ReadRune()
 		switch ch {
@@ -750,9 +749,9 @@ func parseMetaRefTask(reader io.RuneScanner, pi *ParserInfo) MetaRef {
 		consumeSpaces(reader, pi)
 		mrt := MetaRefTask{
 			ident: ident,
-			line: line,
-			col: col,
-			args: parseParams(reader, pi),
+			line:  line,
+			col:   col,
+			args:  parseParams(reader, pi),
 		}
 		return &mrt
 	}

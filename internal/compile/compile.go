@@ -2,6 +2,8 @@ package compile
 
 import (
 	"fmt"
+
+	"github.com/anotherLostKitten/Anglish/internal/llm"
 	"github.com/anotherLostKitten/Anglish/internal/parse"
 )
 
@@ -21,7 +23,7 @@ func Compile(po *parse.ParseOrder) Air {
 	}
 
 	len := po.Length()
-	for i := 0; i < len; i++ {
+	for i := range len {
 		n := po.GetNode(i)
 		deps := po.GetDepIdents(n)
 
@@ -42,23 +44,15 @@ func (air *Air) compileUnit(c CompilationUnit, deps []parse.Ident) {
 		deps_outputs[i] = val
 	}
 	var out CompileOutput
-	switch c.(type) {
+	switch me := c.(type) {
 	case *parse.SpaceDecl:
-		s, ok := c.(*parse.SpaceDecl)
-		if !ok {panic("Type cast failed")}
-		out = compileSpace(s, deps_outputs)
+		out = compileSpace(me, deps_outputs)
 	case *parse.AgentDecl:
-		a, ok := c.(*parse.AgentDecl)
-		if !ok {panic("Type cast failed")}
-		out = compileAgent(a, deps_outputs)
+		out = compileAgent(me, deps_outputs)
 	case *parse.PathDecl:
-		p, ok := c.(*parse.PathDecl)
-		if !ok {panic("Type cast failed")}
-		out = compilePath(p, deps_outputs)
+		out = compilePath(me, deps_outputs)
 	case *parse.TaskDecl:
-		t, ok := c.(*parse.TaskDecl)
-		if !ok {panic("Type cast failed")}
-		out = compileTask(t, deps_outputs)
+		out = compileTask(me, deps_outputs)
 	default:
 		panic("Unknown compilation unit type")
 	}
@@ -68,16 +62,61 @@ func (air *Air) compileUnit(c CompilationUnit, deps []parse.Ident) {
 
 func compileSpace(me *parse.SpaceDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling space\n")
+	var systemPrompt string
+	var systemPromptParseErr error
+	switch me.Space_type {
+	case parse.UI:
+		systemPrompt, systemPromptParseErr = llm.ReadPrompt(llm.UISpaceAgentSystem)
+	case parse.IO:
+		// TODO: define prompt
+		return ""
+	case parse.DATA:
+		// TODO: define prompt
+		return ""
+	case parse.CALL, parse.CHAT:
+		systemPrompt, systemPromptParseErr = llm.ReadPrompt(llm.CallSpaceAgentSystem)
+	case parse.UnknownSpace:
+		panic("Unknown space type")
+	}
+	if systemPromptParseErr != nil {
+		panic("Cannot read system prompt!")
+	}
+	if me.Space_type == parse.CHAT {
+		promptExtension, err := llm.ReadPrompt(llm.AFAgentAgentSystem)
+		if err != nil {
+			panic("Cannot read system prompt extension!")
+		}
+
+		systemPrompt = systemPrompt + "\n" + promptExtension
+	}
 	return "test space"
 }
 
 func compileAgent(me *parse.AgentDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling agent\n")
+	var systemPrompt string
+	switch me.Agent_type {
+	case parse.AF:
+		break
+	case parse.DF:
+		break
+	case parse.UnknownAgent:
+		panic("Unknown agent type")
+	}
 	return "test agent"
 }
 
 func compilePath(me *parse.PathDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling path\n")
+	var systemPrompt string
+	switch me.Path_type {
+	case parse.INVOKE:
+		break
+	case parse.ATTEND:
+		break
+	case parse.UnknownPath:
+		panic("Unknown path type")
+	}
 	return "test path"
 }
 

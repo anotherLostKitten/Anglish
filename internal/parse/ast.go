@@ -43,7 +43,7 @@ type Contract struct {
 
 type SpaceDecl struct {
 	ident      string
-	space_type SpaceType
+	Space_type SpaceType
 	replicable bool
 	params     []Param
 	vibe_desc  VibeBlock
@@ -107,7 +107,7 @@ const (
 
 type AgentDecl struct {
 	ident      string
-	agent_type AgentType
+	Agent_type AgentType
 	params     []Param
 	vibe_desc  VibeBlock
 
@@ -139,7 +139,7 @@ const (
 
 type PathDecl struct {
 	ident        string
-	path_type    PathType
+	Path_type    PathType
 	space_source Ident
 	space_dest   Ident
 	vibe_desc    VibeBlock
