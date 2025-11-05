@@ -5,8 +5,8 @@ import (
 	// "io"
 	"os"
 
-	"github.com/anotherLostKitten/Anglish/internal/parse"
 	"github.com/anotherLostKitten/Anglish/internal/compile"
+	"github.com/anotherLostKitten/Anglish/internal/parse"
 )
 
 func main() {
@@ -20,8 +20,8 @@ func main() {
 	c, errors := parse.ParseFromFile(fn)
 
 	fmt.Printf("error number : %d\n", len(errors))
-	for i := 0; i < len(errors); i++ {
-		parse.PrintErrorInfo(errors[i])
+	for _, err := range errors {
+		parse.PrintErrorInfo(err)
 	}
 	fmt.Printf("%+v\n", c)
 
