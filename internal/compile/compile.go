@@ -7,6 +7,7 @@ import (
 	"github.com/anotherLostKitten/Anglish/internal/llm"
 	"github.com/anotherLostKitten/Anglish/internal/parse"
 	"github.com/tmc/langchaingo/chains"
+	"github.com/tmc/langchaingo/tools"
 )
 
 type CompileOutput string
@@ -91,7 +92,8 @@ func compileSpace(me *parse.SpaceDecl, deps []*CompileOutput) CompileOutput {
 
 		systemPrompt += "\n" + promptExtension
 	}
-	spaceGenAgentExec, newSpaceGenAgentExecErr := llm.NewAgentExecutor(systemPrompt, nil, nil)
+	tools := []tools.Tool{llm.EchoTool{}}
+	spaceGenAgentExec, newSpaceGenAgentExecErr := llm.NewAgentExecutor(systemPrompt, tools, nil)
 	if newSpaceGenAgentExecErr != nil {
 		panic("Cannot create space generation agent executor!")
 	}

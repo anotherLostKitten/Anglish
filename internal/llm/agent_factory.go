@@ -1,12 +1,19 @@
 package llm
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/tmc/langchaingo/agents"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/tools"
 )
+
+type EchoTool struct{}
+
+func (e EchoTool) Name() string                                         { return "ECHO" }
+func (e EchoTool) Description() string                                  { return "Echo back the input" }
+func (e EchoTool) Call(_ context.Context, input string) (string, error) { return input, nil }
 
 // NewAgentExecutor creates an agent using the provided system prompt and tools,
 // optionally attaching the supplied memory, and returns its executor.
