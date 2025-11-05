@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/anotherLostKitten/Anglish/internal/parse"
+	"github.com/anotherLostKitten/Anglish/internal/compile"
 )
 
 func main() {
@@ -24,5 +25,7 @@ func main() {
 	}
 	fmt.Printf("%+v\n", c)
 
-	_ = parse.GetParseOrder(&c)
+	po := parse.GetParseOrder(&c)
+
+	_ = compile.Compile(&po)
 }
