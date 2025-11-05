@@ -23,7 +23,7 @@ type ParseNode struct {
 	visited bool
 	temp    bool
 
-	ast_node ParseUnit
+	Ast_node ParseUnit
 }
 
 type ParseUnit interface {
@@ -62,14 +62,14 @@ func (po *ParseOrder) topSortVisit(id uint64) bool {
 		return true
 	}
 	if n.temp { // cycle !
-		fmt.Printf("Node %s is in a cycle\n", n.ast_node.GetName().toString())
+		fmt.Printf("Node %s is in a cycle\n", n.Ast_node.GetName().toString())
 		return false
 	}
 	n.temp = true
 	for dep_id := range n.deps {
 		po.topSortVisit(dep_id)
 	}
-	// fmt.Printf("adding node %s\n", n.ast_node.GetName().toString())
+	// fmt.Printf("adding node %s\n", n.Ast_node.GetName().toString())
 	n.visited = true
 	po.nodes_sorted[po.nodes_sorted_index] = id
 	po.nodes_sorted_index += 1
@@ -87,7 +87,7 @@ func (po *ParseOrder) addNames(unit ParseUnit) bool {
 	my_id := len(po.nodes_underlying)
 	po.nodes_underlying = append(po.nodes_underlying, ParseNode{
 		deps:     make(map[uint64]bool),
-		ast_node: unit,
+		Ast_node: unit,
 	})
 	po.scope.names[ident] = uint64(my_id)
 
@@ -120,7 +120,7 @@ func GetParseOrder(c *Contract) ParseOrder {
 	}
 
 	for _, n := range po.nodes_underlying {
-		n.ast_node.GetDeps(&n.deps, &po)
+		n.Ast_node.GetDeps(&n.deps, &po)
 	}
 
 	// po.printDeps()
@@ -145,7 +145,7 @@ func GetParseOrder(c *Contract) ParseOrder {
 
 // func (po *ParseOrder) printDeps() {
 // 	for i, n := range po.nodes_underlying {
-// 		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
+// 		fmt.Printf("%d %s:\t", i, n.Ast_node.GetName().toString())
 // 		for dep, _ := range n.deps {
 // 			fmt.Printf("%d ", dep)
 // 		}
@@ -155,12 +155,30 @@ func GetParseOrder(c *Contract) ParseOrder {
 
 func (po *ParseOrder) printDepsOrdered() {
 	fmt.Printf("\n%+v\n", po.nodes_sorted)
-	for _, i := range po.nodes_sorted {
-		n := po.nodes_underlying[i]
-		fmt.Printf("%d %s:\t", i, n.ast_node.GetName().toString())
-		for dep, _ := range n.deps {
+	for _, n_i := range po.nodes_sorted {
+		n := po.nodes_underlying[n_i]
+		fmt.Printf("%d %s:\t", n_i, n.Ast_node.GetName().toString())
+		for dep := range n.deps {
 			fmt.Printf("%d ", dep)
 		}
 		fmt.Println("")
 	}
+}
+
+func (po *ParseOrder) GetDepIdents(n *ParseNode) []Ident {
+	dep_names := make([]Ident, len(n.deps))
+	index := 0
+	for dep := range n.deps {
+		dep_names[index] = po.nodes_underlying[dep].Ast_node.GetName()
+		index += 1
+	}
+	return dep_names
+}
+
+func (po *ParseOrder) Length() int {
+	return len(po.nodes_underlying)
+}
+
+func (po *ParseOrder) GetNode(i int) *ParseNode {
+	return &po.nodes_underlying[po.nodes_sorted[i]]
 }
