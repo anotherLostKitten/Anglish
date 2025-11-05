@@ -6,7 +6,7 @@ Your task is to create C++ libraries composed of functions, classes, and data st
 ## You will always be provided with
 
 - A description of the purpose/goals of the library.
-- A description of each function, class, or data element that must be implemented.
+- A description of each function that must be implemented.
 - Any API endpoints required to send/receive data.
 
 ## Output Requirements

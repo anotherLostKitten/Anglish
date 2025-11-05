@@ -1,10 +1,12 @@
 package compile
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/anotherLostKitten/Anglish/internal/llm"
 	"github.com/anotherLostKitten/Anglish/internal/parse"
+	"github.com/tmc/langchaingo/chains"
 )
 
 type CompileOutput string
@@ -82,19 +84,44 @@ func compileSpace(me *parse.SpaceDecl, deps []*CompileOutput) CompileOutput {
 		panic("Cannot read system prompt!")
 	}
 	if me.Space_type == parse.CHAT {
-		promptExtension, err := llm.ReadPrompt(llm.AFAgentAgentSystem)
-		if err != nil {
+		promptExtension, promptExtensionParseErr := llm.ReadPrompt(llm.ChatSpaceAgentSystem)
+		if promptExtensionParseErr != nil {
 			panic("Cannot read system prompt extension!")
 		}
 
-		systemPrompt = systemPrompt + "\n" + promptExtension
+		systemPrompt += "\n" + promptExtension
 	}
-	return "test space"
+	spaceGenAgentExec, newSpaceGenAgentExecErr := llm.NewAgentExecutor(systemPrompt, nil, nil)
+	if newSpaceGenAgentExecErr != nil {
+		panic("Cannot create space generation agent executor!")
+	}
+
+	var generationPrompt CompileOutput
+	generationPrompt = "Project Name: " + CompileOutput(me.GetName().N)
+
+	for _, task := range me.Tasks {
+		generationPrompt += "\n" + compileTask(&task, deps)
+	}
+
+	// TODO: compile agents
+
+	fmt.Printf("Generation Prompt:\n%s\n", generationPrompt)
+	ctx := context.Background()
+
+	response, runErr := chains.Run(ctx, spaceGenAgentExec, string(generationPrompt))
+
+	if runErr != nil {
+		panic("Space generation agent execution failed!")
+	}
+
+	fmt.Printf("Response:\n%s\n", response)
+
+	return CompileOutput(response)
 }
 
 func compileAgent(me *parse.AgentDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling agent\n")
-	var systemPrompt string
+	// TODO: implement agent compilation
 	switch me.Agent_type {
 	case parse.AF:
 		break
@@ -108,7 +135,7 @@ func compileAgent(me *parse.AgentDecl, deps []*CompileOutput) CompileOutput {
 
 func compilePath(me *parse.PathDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling path\n")
-	var systemPrompt string
+	// TODO: implement path compilation
 	switch me.Path_type {
 	case parse.INVOKE:
 		break
@@ -122,5 +149,16 @@ func compilePath(me *parse.PathDecl, deps []*CompileOutput) CompileOutput {
 
 func compileTask(me *parse.TaskDecl, deps []*CompileOutput) CompileOutput {
 	fmt.Printf("compiling task\n")
-	return "test task"
+
+	taskGenPrompt := "Function: " + me.GetName().N + "\nIO:"
+	for _, param := range me.Params {
+		taskGenPrompt += "\n" + param.ToStr()
+	}
+
+	taskGenPrompt += "\nDescription:"
+	for _, line := range me.Vibe_desc.Vibe_prose {
+		taskGenPrompt += "\n" + line
+	}
+
+	return CompileOutput(taskGenPrompt)
 }

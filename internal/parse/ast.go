@@ -15,20 +15,20 @@ const (
 
 type Ident struct {
 	t MetaType
-	n string
+	N string
 }
 
 func (id Ident) toString() string {
 	var str string
 	switch id.t {
 	case SPACE:
-		str = "@" + id.n
+		str = "@" + id.N
 	case AGENT:
-		str = "#" + id.n
+		str = "#" + id.N
 	case TASK:
-		str = "$" + id.n
+		str = "$" + id.N
 	case PATH:
-		str = "=" + id.n
+		str = "=" + id.N
 	default:
 		panic(-1)
 	}
@@ -49,8 +49,8 @@ type SpaceDecl struct {
 	vibe_desc  VibeBlock
 
 	// inner decls
-	agents []AgentDecl
-	tasks  []TaskDecl
+	Agents []AgentDecl
+	Tasks  []TaskDecl
 	// data []DatumDecl
 
 	line_start, line_end uint64
@@ -59,17 +59,17 @@ type SpaceDecl struct {
 func (me *SpaceDecl) GetName() Ident {
 	return Ident{
 		t: SPACE,
-		n: me.ident,
+		N: me.ident,
 	}
 }
 
 func (me *SpaceDecl) GetChildren() []ParseUnit {
-	a_len := len(me.agents)
-	children := make([]ParseUnit, a_len+len(me.tasks))
-	for i, a := range me.agents {
+	a_len := len(me.Agents)
+	children := make([]ParseUnit, a_len+len(me.Tasks))
+	for i, a := range me.Agents {
 		children[i] = &a
 	}
-	for i, t := range me.tasks {
+	for i, t := range me.Tasks {
 		children[i+a_len] = &t
 	}
 	// DatumDecls?
@@ -117,7 +117,7 @@ type AgentDecl struct {
 func (me *AgentDecl) GetName() Ident {
 	return Ident{
 		t: AGENT,
-		n: me.ident,
+		N: me.ident,
 	}
 }
 
@@ -150,7 +150,7 @@ type PathDecl struct {
 func (me *PathDecl) GetName() Ident {
 	return Ident{
 		t: PATH,
-		n: me.ident,
+		N: me.ident,
 	}
 }
 
@@ -178,8 +178,8 @@ const (
 
 type TaskDecl struct {
 	ident     string
-	params    []Param
-	vibe_desc VibeBlock
+	Params    []Param
+	Vibe_desc VibeBlock
 
 	line_start, line_end uint64
 }
@@ -187,7 +187,7 @@ type TaskDecl struct {
 func (me *TaskDecl) GetName() Ident {
 	return Ident{
 		t: TASK,
-		n: me.ident,
+		N: me.ident,
 	}
 }
 
@@ -196,7 +196,7 @@ func (me *TaskDecl) GetChildren() []ParseUnit {
 }
 
 func (me *TaskDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
-	return me.vibe_desc.getDeps(deps, po)
+	return me.Vibe_desc.getDeps(deps, po)
 }
 
 // type DatumDecl struct {
@@ -220,7 +220,7 @@ func (p *Param) ToStr() string {
 }
 
 type VibeBlock struct {
-	vibe_prose []string
+	Vibe_prose []string
 	meta_refs  []MetaRef
 
 	line_start, line_end uint64
@@ -284,7 +284,7 @@ func (mr *MetaRefUseImport) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool 
 	}
 	return po.scope.tryAddDep(Ident{
 		t: ident_type,
-		n: mr.imported,
+		N: mr.imported,
 	}, deps)
 }
 
@@ -335,6 +335,6 @@ func (mr *MetaRefPath) ToStr() string {
 func (mr *MetaRefPath) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	return po.scope.tryAddDep(Ident{
 		t: PATH,
-		n: mr.ident,
+		N: mr.ident,
 	}, deps)
 }

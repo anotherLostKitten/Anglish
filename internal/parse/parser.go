@@ -381,12 +381,12 @@ InnerDeclLoop:
 		case '#':
 			ref := parseAgentDecl(reader, pi)
 			if ref != nil {
-				decl.agents = append(decl.agents, *ref)
+				decl.Agents = append(decl.Agents, *ref)
 			}
 		case '$':
 			ref := parseTaskDecl(reader, pi)
 			if ref != nil {
-				decl.tasks = append(decl.tasks, *ref)
+				decl.Tasks = append(decl.Tasks, *ref)
 			}
 		case '@':
 			pi.addError(IllegalDeclarationInsideSpaceScope)
@@ -477,11 +477,11 @@ func parseTaskDecl(reader io.RuneScanner, pi *ParserInfo) *TaskDecl {
 
 	// todo check if identifier is reserved -- viz., $use
 
-	task.params = parseParams(reader, pi)
+	task.Params = parseParams(reader, pi)
 
 	consumeLineRemainder(reader, pi)
 
-	task.vibe_desc = parseVibeBlock(reader, pi)
+	task.Vibe_desc = parseVibeBlock(reader, pi)
 
 	task.line_end = pi.line
 	return &task
@@ -579,11 +579,11 @@ func parsePathDecl(reader io.RuneScanner, pi *ParserInfo) *PathDecl {
 
 	path.space_source = Ident{
 		t: SPACE,
-		n: path_spaces[0].val,
+		N: path_spaces[0].val,
 	}
 	path.space_dest = Ident{
 		t: SPACE,
-		n: path_spaces[1].val,
+		N: path_spaces[1].val,
 	}
 
 	consumeLineRemainder(reader, pi)
@@ -671,7 +671,7 @@ BlockLoop:
 			}
 		}
 
-		vb.vibe_prose = append(vb.vibe_prose, vl.String())
+		vb.Vibe_prose = append(vb.Vibe_prose, vl.String())
 	}
 	vb.line_end = pi.line
 	return vb
