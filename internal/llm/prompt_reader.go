@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	FuncSpaceAgentSystem = "func_space_agent_system"
+	CallSpaceAgentSystem = "call_space_agent_system"
 	UISpaceAgentSystem   = "ui_space_agent_system"
+	ChatSpaceAgentSystem = "chat_space_agent_system"
 	DFAgentAgentSystem   = "df_agent_agent_system"
 	AFAgentAgentSystem   = "af_agent_agent_system"
 )

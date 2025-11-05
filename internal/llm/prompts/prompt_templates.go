@@ -22,7 +22,7 @@ Inputs: {{.TaskInputs}}
 Outputs: {{.TaskOutputs}}
 Endpoints: {{.PathEndpoints}}`
 
-	UiSpaceTaskTemplateString = `Component:
+	UISpaceTaskTemplateString = `Component:
 Name: {{.TaskIdentifier}}
 Type: Component
 Description: {{.TaskVibeBlock}}
@@ -35,7 +35,7 @@ Name: {{.DataIdentifier}}
 Type: Data
 Description: {{.DataVibeBlock}}`
 
-	UiSpaceAgentPerSpaceTemplate = `Create an interface according to the following specifications..
+	UISpaceAgentPerSpaceTemplate = `Create an interface according to the following specifications..
 Description of interface goal/purpose: {{.SpaceVibeBlock}}
 Interface Content:
 {{}}{{end}}`
