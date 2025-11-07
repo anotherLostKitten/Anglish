@@ -40,8 +40,6 @@ short "Assumptions" note at the top of the code as comments.
 
 - Include minimal inline comments to explain non-obvious decisions (within the
   relevant file's lines).
-- Put the **UX Rationale** (bulleted) in `README.md`, covering hierarchy,
-  interactions, empty/loading/error states, and accessibility measures.
 
 Example format (for illustration only — your actual output must be JSON
 without fences or prose):
