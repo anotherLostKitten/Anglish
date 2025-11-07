@@ -18,4 +18,3 @@ services:
       --model ${OPENAI_MODEL}
       --max-model-len 4096
       --gpu-memory-utilization 0.80
-      --chat-template /root/tool_chat_template_gemma3_pythonic.jinja
