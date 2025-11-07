@@ -26,9 +26,6 @@ Your task is to create Go packages composed of functions, types, and data struct
     Comments should start with the name of the exported symbol
     (e.g., `// MyFunction does...`).
   - Provide minimal usage examples in comments if the functionality might be unclear.
-  - Optionally include `README.md` summarizing build steps, assumptions, and
-    integration notes.
-  - Optionally include `*_test.go` files with unit tests using the testing package.
 
 - JSON output rules:
   - Output ONLY valid JSON. Do not include markdown code fences or any prose
@@ -55,18 +52,6 @@ Example format (illustrative; your actual output must be JSON without fences or 
       "func MyFunction() error {",
       "  return nil",
       "}"
-    ]
-  },
-  {
-    "filename": "README.md",
-    "filelines": [
-      "# Go Package",
-      "",
-      "Build:",
-      "  - go build",
-      "",
-      "Usage:",
-      "  - ..."
     ]
   }
 ]

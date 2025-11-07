@@ -28,7 +28,6 @@ short "Assumptions" note at the top of the code as comments.
   - **index.html** (semantic markup)
   - **styles.css** (modular, documented)
   - **app.js** (modular, documented)
-  - **README.md** (optional; include assumptions, UX rationale, and how to run)
 
 - JSON output rules:
   - Output ONLY valid JSON. Do not include markdown code fences or any prose
@@ -60,10 +59,6 @@ without fences or prose):
   {
     "filename": "app.js",
     "filelines": ["export function init() {", "  // ...", "}"]
-  },
-  {
-    "filename": "README.md",
-    "filelines": ["# UI", "", "- UX Rationale:", "  - ..."]
   }
 ]
 ```
@@ -128,15 +123,6 @@ without fences or prose):
 
 - Provide basic **a11y checks** (keyboard walkthrough, tab order list,
   color contrast note).
-- Include simple **unit-less checks** (e.g., functions are pure, events are
-  cleaned up) and a manual test checklist.
-- Validate HTML & CSS; run through Lighthouse heuristics (conceptual, not tool-execution).
-
-## Documentation
-
-- Add a top-of-file comment block summarizing purpose, dependencies, and assumptions.
-- In README, document component API (props/attrs), accessible name/role, keyboard
-  interactions, and known trade-offs.
 
 ## Coding Standards
 
