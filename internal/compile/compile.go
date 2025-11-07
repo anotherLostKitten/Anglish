@@ -102,6 +102,10 @@ func compileSpace(me *parse.SpaceDecl, deps []*CompileOutput) CompileOutput {
 	generationPrompt = "Project Name: " + CompileOutput(me.GetName().N)
 
 	for _, task := range me.Tasks {
+		if me.Space_type == parse.CHAT && task.GetName().N == "agentic_main" {
+			// TODO: handle CHAT space's agent
+			continue
+		}
 		generationPrompt += "\n" + compileTask(&task, deps)
 	}
 
