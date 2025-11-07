@@ -16,5 +16,5 @@ services:
     runtime: nvidia
     command: >
       --model ${OPENAI_MODEL}
-      --max-model-len 4096
-      --gpu-memory-utilization 0.80
+      --max-model-len ${MAX_MODEL_LEN}
+      --gpu-memory-utilization 0.85
