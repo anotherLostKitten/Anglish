@@ -159,10 +159,10 @@ func (me *PathDecl) GetChildren() []ParseUnit {
 }
 
 func (me *PathDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
-	if !po.scope.tryAddDep(me.space_source, deps) {
+	if !po.tryAddChildDep(me.space_source, me.GetName()) {
 		return false
 	}
-	if !po.scope.tryAddDep(me.space_dest, deps) {
+	if !po.tryAddChildDep(me.space_dest, me.GetName()) {
 		return false
 	}
 	return me.vibe_desc.getDeps(deps, po)
