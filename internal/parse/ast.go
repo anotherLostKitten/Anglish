@@ -84,12 +84,12 @@ func (me *SpaceDecl) GetDeps(deps *map[uint64]bool, po *ParseOrder) bool {
 	space_id := me.GetName()
 	for _, c := range me.GetChildren() {
 		id := c.GetName()
-		if !po.tryAddChildDep(id, space_id) {
-			return false
-		}
-		// if !po.scope.tryAddDep(id, deps) {
+		// if !po.tryAddChildDep(id, space_id) {
 		// 	return false
 		// }
+		if !po.scope.tryAddDep(id, deps) {
+			return false
+		}
 	}
 	return true
 }
