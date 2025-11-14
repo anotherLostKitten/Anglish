@@ -130,6 +130,8 @@ without fences or prose):
   avoid `!important`, scope components, use `@media (prefers-reduced-motion)`.
 - **JS**: ES modules, no global leaks, pure functions where possible, event
   delegation for lists, avoid inline event handlers in HTML.
+- All JavaScript must remain ES5-compatible so downstream validators that rely
+  on ES5 parsers can process the output without syntax errors.
 - **Files**: consistent casing; keep functions small and single-responsibility;
   extract helpers.
 
