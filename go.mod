@@ -4,8 +4,11 @@ go 1.25.1
 
 require (
 	github.com/joho/godotenv v1.5.1
+	github.com/robertkrimen/otto v0.5.1
 	github.com/stretchr/testify v1.10.0
+	github.com/tdewolff/parse v2.3.4+incompatible
 	github.com/tmc/langchaingo v0.1.4
+	golang.org/x/net v0.19.0
 )
 
 require (
@@ -37,5 +40,7 @@ require (
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
 	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
